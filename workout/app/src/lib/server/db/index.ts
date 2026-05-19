@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { join } from 'node:path';
 import { SCHEMA_SQL } from './schema';
 import { seed } from './seed';
-import { seedPlans } from './plans-seed';
+import { seedPlans, migrateRefreshPlans_v2 } from './plans-seed';
 import { ensureTechniques } from './techniques';
 
 const DATA_DIR = process.env.DATA_DIR ?? '/data';
@@ -28,6 +28,7 @@ export function getDb(): Database.Database {
   seedPlans(db);
   ensureTechniques(db);
   migrateStartLevelsToOne(db);
+  migrateRefreshPlans_v2(db);
 
   dbInstance = db;
   return db;

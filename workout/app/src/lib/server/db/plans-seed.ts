@@ -20,9 +20,6 @@ type StarterPlan = {
   days: PlanDay[];
 };
 
-// Plany używają tylko ćwiczeń obecnych w seed (exercises slug),
-// czyli: pull-up, ring-row, push-up, dip, bulgarian-split-squat,
-// glute-bridge, plank, hanging-knee-raise, bike, air-walker.
 const PLANS: StarterPlan[] = [
   {
     user_slot: 'user1',
@@ -32,31 +29,34 @@ const PLANS: StarterPlan[] = [
       {
         label: 'A · Pull',
         items: [
+          { slug: 'scap-circles', start_level: 1, target_sets: 2, rest_seconds: 30, notes: 'aktywacja barków' },
           { slug: 'pull-up', start_level: 1, target_sets: 4, rest_seconds: 120, notes: 'główne pull' },
-          { slug: 'ring-row', start_level: 1, target_sets: 3, rest_seconds: 90 },
-          { slug: 'dip', start_level: 1, target_sets: 3, rest_seconds: 90, notes: 'przeciwwaga push' },
+          { slug: 'chin-up', start_level: 1, target_sets: 3, rest_seconds: 90, notes: 'secondary pull, więcej bicepsa' },
+          { slug: 'ring-row', start_level: 1, target_sets: 3, rest_seconds: 75 },
           { slug: 'hanging-knee-raise', start_level: 1, target_sets: 3, rest_seconds: 60 },
-          { slug: 'bike', start_level: 1, target_sets: 1, rest_seconds: 0, notes: 'finisher' }
+          { slug: 'bike', start_level: 1, target_sets: 1, rest_seconds: 0, notes: 'easy cooldown' }
         ]
       },
       {
         label: 'B · Push',
         items: [
           { slug: 'push-up', start_level: 1, target_sets: 4, rest_seconds: 90, notes: 'główne push' },
-          { slug: 'dip', start_level: 1, target_sets: 3, rest_seconds: 90 },
-          { slug: 'pull-up', start_level: 1, target_sets: 3, rest_seconds: 60, notes: 'scapular - aktywacja' },
+          { slug: 'dip', start_level: 1, target_sets: 4, rest_seconds: 90, notes: 'klatka + triceps' },
+          { slug: 'pike-push-up', start_level: 1, target_sets: 3, rest_seconds: 75, notes: 'progresja do handstand' },
           { slug: 'plank', start_level: 1, target_sets: 3, rest_seconds: 60 },
-          { slug: 'bike', start_level: 1, target_sets: 1, rest_seconds: 0 }
+          { slug: 'hollow-body-hold', start_level: 1, target_sets: 3, rest_seconds: 45 },
+          { slug: 'bike', start_level: 1, target_sets: 1, rest_seconds: 0, notes: 'steady' }
         ]
       },
       {
         label: 'C · Legs + Core',
         items: [
-          { slug: 'bulgarian-split-squat', start_level: 1, target_sets: 4, rest_seconds: 90, notes: 'główne nogi' },
+          { slug: 'squat', start_level: 1, target_sets: 4, rest_seconds: 90, notes: 'główne nogi' },
+          { slug: 'bulgarian-split-squat', start_level: 1, target_sets: 3, rest_seconds: 75, notes: 'single-leg' },
           { slug: 'glute-bridge', start_level: 1, target_sets: 3, rest_seconds: 60 },
-          { slug: 'plank', start_level: 1, target_sets: 3, rest_seconds: 60 },
-          { slug: 'hanging-knee-raise', start_level: 1, target_sets: 3, rest_seconds: 60 },
-          { slug: 'air-walker', start_level: 1, target_sets: 1, rest_seconds: 0, notes: 'cooldown' }
+          { slug: 'calf-raise', start_level: 1, target_sets: 3, rest_seconds: 45 },
+          { slug: 'sit-up', start_level: 1, target_sets: 3, rest_seconds: 60 },
+          { slug: 'air-walker', start_level: 1, target_sets: 1, rest_seconds: 0, notes: 'cooldown 5 min' }
         ]
       }
     ]
@@ -69,9 +69,10 @@ const PLANS: StarterPlan[] = [
       {
         label: 'A · Lower-heavy',
         items: [
-          { slug: 'bulgarian-split-squat', start_level: 1, target_sets: 4, rest_seconds: 75, notes: 'główne nogi' },
+          { slug: 'squat', start_level: 1, target_sets: 4, rest_seconds: 75, notes: 'główne nogi' },
           { slug: 'glute-bridge', start_level: 1, target_sets: 4, rest_seconds: 60, notes: 'pośladki - izolacja' },
-          { slug: 'push-up', start_level: 1, target_sets: 3, rest_seconds: 60 },
+          { slug: 'bulgarian-split-squat', start_level: 1, target_sets: 3, rest_seconds: 60, notes: 'single-leg' },
+          { slug: 'calf-raise', start_level: 1, target_sets: 3, rest_seconds: 45 },
           { slug: 'plank', start_level: 1, target_sets: 3, rest_seconds: 45 },
           { slug: 'bike', start_level: 1, target_sets: 1, rest_seconds: 0, notes: 'interwały finisher' }
         ]
@@ -79,20 +80,22 @@ const PLANS: StarterPlan[] = [
       {
         label: 'B · Upper + Cardio',
         items: [
-          { slug: 'push-up', start_level: 1, target_sets: 3, rest_seconds: 60 },
+          { slug: 'push-up', start_level: 1, target_sets: 3, rest_seconds: 75 },
           { slug: 'ring-row', start_level: 1, target_sets: 3, rest_seconds: 60 },
-          { slug: 'dip', start_level: 1, target_sets: 3, rest_seconds: 60, notes: 'bench dip - triceps' },
+          { slug: 'pike-push-up', start_level: 1, target_sets: 2, rest_seconds: 60, notes: 'pike hold na start' },
+          { slug: 'sit-up', start_level: 1, target_sets: 3, rest_seconds: 45 },
           { slug: 'plank', start_level: 1, target_sets: 3, rest_seconds: 45 },
-          { slug: 'bike', start_level: 1, target_sets: 1, rest_seconds: 0, notes: 'steady-state główne cardio' }
+          { slug: 'bike', start_level: 1, target_sets: 1, rest_seconds: 0, notes: 'steady-state - main cardio' }
         ]
       },
       {
         label: 'C · Lower + Core',
         items: [
-          { slug: 'bulgarian-split-squat', start_level: 1, target_sets: 3, rest_seconds: 60 },
-          { slug: 'glute-bridge', start_level: 1, target_sets: 4, rest_seconds: 60, notes: 'single-leg' },
-          { slug: 'hanging-knee-raise', start_level: 1, target_sets: 3, rest_seconds: 45 },
-          { slug: 'plank', start_level: 1, target_sets: 3, rest_seconds: 45 },
+          { slug: 'lunge', start_level: 1, target_sets: 3, rest_seconds: 60, notes: 'dynamic single-leg' },
+          { slug: 'glute-bridge', start_level: 1, target_sets: 4, rest_seconds: 60, notes: 'idź w stronę single-leg' },
+          { slug: 'step-up', start_level: 1, target_sets: 3, rest_seconds: 45, notes: 'functional' },
+          { slug: 'hollow-body-hold', start_level: 1, target_sets: 3, rest_seconds: 45 },
+          { slug: 'sit-up', start_level: 1, target_sets: 3, rest_seconds: 45 },
           { slug: 'bike', start_level: 1, target_sets: 1, rest_seconds: 0, notes: 'tabata finisher' }
         ]
       }
@@ -103,7 +106,10 @@ const PLANS: StarterPlan[] = [
 export function seedPlans(db: Database.Database) {
   const count = (db.prepare('SELECT COUNT(*) AS n FROM plans').get() as { n: number }).n;
   if (count > 0) return;
+  doSeedPlans(db);
+}
 
+function doSeedPlans(db: Database.Database) {
   const getUserId = db.prepare('SELECT id FROM users WHERE slot = ?');
   const getExerciseId = db.prepare('SELECT id FROM exercises WHERE slug = ?');
   const insertPlan = db.prepare(`
@@ -142,4 +148,37 @@ export function seedPlans(db: Database.Database) {
     }
   });
   tx();
+}
+
+/**
+ * Migracja v2 - jednorazowo nadpisuje istniejące plany M i G nowymi wersjami
+ * (rozbudowane o ćwiczenia z biblioteki 0.8.0). Sesje powiązane z usuwanymi
+ * planami zachowują się dzięki ON DELETE SET NULL na sessions.plan_id -
+ * historia treningów pozostaje, tylko traci wskaźnik do planu.
+ *
+ * Po wykonaniu zaznacza się w meta - kolejny start addona nie wykona ponownie.
+ */
+export function migrateRefreshPlans_v2(db: Database.Database) {
+  const done = db
+    .prepare('SELECT value FROM meta WHERE key = ?')
+    .get('migration_v2_refresh_plans') as { value: string } | undefined;
+  if (done) return;
+
+  db.transaction(() => {
+    // Czyścimy istniejące plany seedowanych userów (user1, user2)
+    db.prepare(
+      `DELETE FROM plans WHERE user_id IN (
+         SELECT id FROM users WHERE slot IN ('user1', 'user2')
+       )`
+    ).run();
+    // CASCADE w schema usuwa plan_exercises
+
+    // Reseedujemy świeże
+    doSeedPlans(db);
+
+    db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)').run(
+      'migration_v2_refresh_plans',
+      '1'
+    );
+  })();
 }
