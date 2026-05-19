@@ -89,6 +89,22 @@ export const load: ServerLoad = ({ params }) => {
     )
     .all(exercise.id) as Progression[];
 
+  const totals = db
+    .prepare(
+      `SELECT
+         SUM(st.reps) AS total_reps,
+         SUM(st.duration_s) AS total_duration_s,
+         COUNT(st.id) AS total_sets
+       FROM sessions s
+       JOIN sets st ON st.session_id = s.id
+       WHERE s.user_id = ? AND s.completed_at IS NOT NULL AND st.exercise_id = ?`
+    )
+    .get(user.id, exercise.id) as {
+    total_reps: number | null;
+    total_duration_s: number | null;
+    total_sets: number;
+  };
+
   const currentLevelRow = db
     .prepare(
       'SELECT level FROM user_exercise_level WHERE user_id = ? AND exercise_id = ?'
@@ -106,6 +122,7 @@ export const load: ServerLoad = ({ params }) => {
     progressions,
     currentLevel,
     currentProgression,
-    mode
+    mode,
+    totals
   };
 };

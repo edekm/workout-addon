@@ -10,6 +10,8 @@ type ExerciseStats = {
   current_level: number;
   sessions_count: number;
   sets_count: number;
+  total_reps: number | null;
+  total_duration_s: number | null;
   last_session_at: number | null;
 };
 
@@ -33,6 +35,8 @@ export const load: ServerLoad = ({ params }) => {
          COALESCE(uel.level, 1) AS current_level,
          COUNT(DISTINCT s.id) AS sessions_count,
          COUNT(st.id) AS sets_count,
+         SUM(st.reps) AS total_reps,
+         SUM(st.duration_s) AS total_duration_s,
          MAX(s.completed_at) AS last_session_at
        FROM exercises e
        JOIN sets st ON st.exercise_id = e.id

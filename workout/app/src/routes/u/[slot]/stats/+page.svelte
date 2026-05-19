@@ -9,6 +9,8 @@
       current_level: number;
       sessions_count: number;
       sets_count: number;
+      total_reps: number | null;
+      total_duration_s: number | null;
       last_session_at: number | null;
     }>;
     summary: {
@@ -37,6 +39,18 @@
       day: '2-digit',
       month: 'short'
     });
+  }
+
+  function fmtTotal(reps: number | null, duration: number | null): string {
+    if (reps && reps > 0) return `${reps} powt.`;
+    if (duration && duration > 0) {
+      const m = Math.floor(duration / 60);
+      const s = duration % 60;
+      if (m === 0) return `${s}s`;
+      if (s === 0) return `${m} min`;
+      return `${m} min ${s}s`;
+    }
+    return '—';
   }
 </script>
 
@@ -86,6 +100,9 @@
               </div>
               <p class="mt-0.5 text-xs text-neutral-500">
                 L{ex.current_level} · {ex.sessions_count} sesji · {ex.sets_count} serii
+              </p>
+              <p class="mt-0.5 text-xs font-medium text-neutral-700">
+                łącznie: {fmtTotal(ex.total_reps, ex.total_duration_s)}
               </p>
             </div>
             <span class="ml-2 text-xs text-neutral-400">{fmtDate(ex.last_session_at)}</span>

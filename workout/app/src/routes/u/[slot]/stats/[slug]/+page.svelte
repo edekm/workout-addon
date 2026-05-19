@@ -24,7 +24,28 @@
     currentLevel: number;
     currentProgression: Progression | null;
     mode: 'reps' | 'duration';
+    totals: {
+      total_reps: number | null;
+      total_duration_s: number | null;
+      total_sets: number;
+    };
   };
+
+  function fmtTotalBig(reps: number | null, duration: number | null, mode: 'reps' | 'duration'): { value: string; unit: string } {
+    if (mode === 'duration') {
+      const s = duration ?? 0;
+      const m = Math.floor(s / 60);
+      const rem = s % 60;
+      if (m >= 60) {
+        const h = Math.floor(m / 60);
+        const mm = m % 60;
+        return { value: `${h}h ${mm}m`, unit: 'łącznie' };
+      }
+      if (m === 0) return { value: `${rem}s`, unit: 'łącznie' };
+      return { value: `${m}m ${rem}s`, unit: 'łącznie' };
+    }
+    return { value: String(reps ?? 0), unit: 'powt. łącznie' };
+  }
 
   $: chartW = 320;
   $: chartH = 140;
@@ -112,6 +133,15 @@
       Brak zalogowanych serii dla tego ćwiczenia.
     </p>
   {:else}
+    {@const big = fmtTotalBig(data.totals.total_reps, data.totals.total_duration_s, data.mode)}
+    <section class="mb-4 rounded-2xl bg-emerald-50 p-5 text-center shadow-sm ring-1 ring-emerald-100">
+      <p class="text-4xl font-bold tabular-nums text-emerald-900">{big.value}</p>
+      <p class="mt-1 text-xs uppercase tracking-wider text-emerald-700">{big.unit}</p>
+      <p class="mt-2 text-xs text-emerald-700/70">
+        {data.totals.total_sets} serii w {data.sessions.length} sesjach
+      </p>
+    </section>
+
     <section class="mb-4 rounded-2xl bg-white p-4 shadow-sm">
       <div class="mb-2 flex items-baseline justify-between">
         <h2 class="text-xs uppercase tracking-wider text-neutral-400">Progresja best set</h2>
