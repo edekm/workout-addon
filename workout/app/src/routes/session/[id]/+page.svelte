@@ -638,6 +638,11 @@
             <p class="mt-2 text-xs text-neutral-500">
               Awans był automatyczny - możesz cofnąć wybierając poprzedni poziom.
             </p>
+          {:else if currentEx.level_source === 'manual'}
+            <p class="mt-2 text-xs text-neutral-500">
+              Poziom ustawiony ręcznie. Auto-awans nadal działa - po 2 sesjach
+              w celu system sam podbije wariant.
+            </p>
           {/if}
         </div>
       {/if}

@@ -41,10 +41,9 @@ export function resolveLevel(
     ? existing.source
     : 'plan';
 
-  // Manual override - nie ruszamy
-  if (baseSource === 'manual') {
-    return { level: baseLevel, promoted: false, source: 'manual' };
-  }
+  // Manual jest tylko jednorazową korektą punktu startowego - nie blokuje
+  // auto-promocji. Jeśli user na manualnie ustawionym levelu wbije 2 sesje
+  // z hit max, normalnie awansujemy i source wraca do 'auto'.
 
   // Pobierz cel dla baseLevel
   const baseProg = db
