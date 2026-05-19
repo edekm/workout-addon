@@ -225,6 +225,23 @@ export const actions: Actions = {
     throw redirect(303, `${locals.ingressPath}${user ? `/u/${user.slot}` : '/'}`);
   },
 
+  deleteSession: async ({ params, locals }) => {
+    const sessionId = parseId(params.id);
+    const db = getDb();
+    const session = db
+      .prepare('SELECT user_id FROM sessions WHERE id = ?')
+      .get(sessionId) as { user_id: number } | undefined;
+    if (!session) throw error(404, 'Sesja nie istnieje');
+
+    // CASCADE w schema usuwa sety automatycznie
+    db.prepare('DELETE FROM sessions WHERE id = ?').run(sessionId);
+
+    const user = db.prepare('SELECT slot FROM users WHERE id = ?').get(session.user_id) as
+      | { slot: string }
+      | undefined;
+    throw redirect(303, `${locals.ingressPath}${user ? `/u/${user.slot}` : '/'}`);
+  },
+
   cancel: async ({ params, locals }) => {
     const sessionId = parseId(params.id);
     const db = getDb();

@@ -174,18 +174,54 @@
     }
   }
 
+  // Wake Lock - ekran nie gaśnie podczas aktywnej sesji
+  let wakeLock: any = null;
+
+  async function acquireWakeLock() {
+    if (readonly) return;
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLock = await (navigator as any).wakeLock.request('screen');
+        wakeLock.addEventListener?.('release', () => {
+          wakeLock = null;
+        });
+      }
+    } catch {
+      // np. user nie dał gestu, brak supportu - ignorujemy
+    }
+  }
+
+  function releaseWakeLock() {
+    try {
+      wakeLock?.release?.();
+    } catch {}
+    wakeLock = null;
+  }
+
+  function onVisibility() {
+    if (document.visibilityState === 'visible' && !readonly && !wakeLock) {
+      acquireWakeLock();
+    }
+  }
+
   onMount(() => {
     if (!readonly) {
       const start = findStartingStep();
       exIdx = start.exIdx;
       setNum = start.setNum;
       syncInputFromExisting();
+      acquireWakeLock();
+      document.addEventListener('visibilitychange', onVisibility);
     }
   });
 
   onDestroy(() => {
     if (restInterval) clearInterval(restInterval);
     if (exerciseInterval) clearInterval(exerciseInterval);
+    releaseWakeLock();
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', onVisibility);
+    }
   });
 
   function ensureAudio() {
@@ -515,6 +551,24 @@
         </li>
       {/each}
     </ol>
+
+    <form
+      method="POST"
+      action="?/deleteSession"
+      class="mt-6"
+      on:submit={(e) => {
+        if (!confirm('Usunąć tę sesję na zawsze? Wszystkie zalogowane serie znikną.')) {
+          e.preventDefault();
+        }
+      }}
+    >
+      <button
+        type="submit"
+        class="w-full rounded-xl border border-red-200 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50"
+      >
+        Usuń sesję
+      </button>
+    </form>
   {:else if currentEx}
     <!-- Guided flow -->
     <section class="rounded-2xl bg-white p-5 shadow-sm">
