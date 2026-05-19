@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { enhance } from '$app/forms';
+  import { enhance, deserialize } from '$app/forms';
   import { onMount, onDestroy } from 'svelte';
   import { equipmentLabel } from '$lib/equipment';
 
@@ -60,6 +60,7 @@
   let inputValue = '';
   let showTechnique = false;
   let saving = false;
+  let saveError = '';
 
   // Timer odpoczynku i timer ćwiczenia (duration mode)
   let restElapsed = 0; // sekundy od startu odpoczynku
@@ -99,6 +100,7 @@
   }
 
   function syncInputFromExisting() {
+    saveError = '';
     // Czytamy bezpośrednio z data, nie z reactive $: (które jeszcze nie przeliczyło)
     const ex = data.exercises[exIdx];
     if (!ex) return;
@@ -338,16 +340,41 @@
     syncInputFromExisting();
   }
 
-  // Submit hidden form po kliknięciu "Dalej"
-  let formEl: HTMLFormElement;
-  function submitNext() {
+  async function submitNext() {
+    if (!currentEx || saving) return;
     ensureAudio();
-    if (!currentEx) return;
     const v = valueToSubmit();
     if (!v) return;
-    // wypełniamy input warunkowo (target gdy puste) tuż przed submitem
-    inputValue = v;
-    formEl?.requestSubmit();
+    saving = true;
+    saveError = '';
+    const fd = new FormData();
+    fd.append('exercise_id', String(currentEx.exercise_id));
+    fd.append('set_number', String(setNum));
+    fd.append('level', String(currentEx.progression?.level ?? currentEx.start_level));
+    if (mode === 'reps') fd.append('reps', v);
+    else fd.append('duration_s', v);
+
+    try {
+      const res = await fetch('?/logSet', {
+        method: 'POST',
+        body: fd,
+        headers: { 'x-sveltekit-action': 'true' }
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const result: any = deserialize(await res.text());
+      if (result?.type === 'failure') {
+        throw new Error(result?.data?.message ?? 'Zapis odrzucony');
+      }
+      if (result?.type === 'error') {
+        throw new Error(result?.error?.message ?? 'Błąd serwera');
+      }
+      inputValue = v;
+      handleSaved();
+    } catch (e) {
+      saveError = 'Nie zapisano: ' + ((e as Error).message ?? 'błąd');
+    } finally {
+      saving = false;
+    }
   }
 
   function categoryColor(cat: string): string {
@@ -497,23 +524,10 @@
 
       {#if phase === 'log'}
         <!-- Faza logowania serii -->
-        <form
-          bind:this={formEl}
-          method="POST"
-          action="?/logSet"
-          use:enhance={() => {
-            saving = true;
-            return async ({ update }) => {
-              await update({ reset: false });
-              saving = false;
-              handleSaved();
-            };
-          }}
-          class="mt-5"
-        >
-          <input type="hidden" name="exercise_id" value={currentEx.exercise_id} />
-          <input type="hidden" name="set_number" value={setNum} />
-          <input type="hidden" name="level" value={currentEx.progression?.level ?? currentEx.start_level} />
+        <div class="mt-5">
+          {#if saveError}
+            <p class="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{saveError}</p>
+          {/if}
 
           {#if mode === 'duration'}
             <div class="flex flex-col items-center gap-3">
@@ -587,7 +601,6 @@
                 {/if}
               </div>
 
-              <input type="hidden" name="duration_s" bind:value={inputValue} />
               {#if timerPhase === 'idle' || timerPhase === 'paused' || timerPhase === 'done'}
                 <p class="mt-1 text-xs text-neutral-400">Lub wpisz ręcznie:</p>
                 <input
@@ -603,7 +616,6 @@
             <div class="flex flex-col items-center gap-3">
               <input
                 type="number"
-                name="reps"
                 bind:value={inputValue}
                 inputmode="numeric"
                 min="0"
@@ -616,7 +628,7 @@
               </p>
             </div>
           {/if}
-        </form>
+        </div>
       {:else}
         <!-- Faza odpoczynku -->
         <div class="mt-5 flex flex-col items-center gap-3 rounded-xl bg-neutral-50 p-5">
