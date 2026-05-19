@@ -1,6 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, ServerLoad } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
+import { resolveLevel, setManualLevel } from '$lib/server/db/progression';
 
 type SessionRow = {
   id: number;
@@ -92,11 +93,31 @@ export const load: ServerLoad = ({ params }) => {
        ORDER BY set_number`
     );
 
-    exercises = pes.map((pe) => ({
-      ...pe,
-      progression: (getProgression.get(pe.exercise_id, pe.start_level) as ProgressionRow) ?? null,
-      sets: getSets.all(sessionId, pe.exercise_id) as SetRow[]
-    }));
+    const getAllProgressions = db.prepare(
+      `SELECT level, variant_name, target_reps_min, target_reps_max, target_duration_s
+       FROM progressions WHERE exercise_id = ? ORDER BY level`
+    );
+
+    // Auto-promocję wykonujemy tylko gdy sesja jest jeszcze aktywna
+    // (zakończona sesja powinna pokazywać historyczne dane bez modyfikacji)
+    const isActive = session.completed_at == null;
+
+    exercises = pes.map((pe) => {
+      const eff = isActive
+        ? resolveLevel(db, session.user_id, pe.exercise_id, pe.start_level)
+        : { level: pe.start_level, promoted: false, source: 'plan' as const };
+      const progression =
+        (getProgression.get(pe.exercise_id, eff.level) as ProgressionRow) ?? null;
+      const allLevels = getAllProgressions.all(pe.exercise_id) as ProgressionRow[];
+      return {
+        ...pe,
+        progression,
+        promoted: eff.promoted,
+        level_source: eff.source,
+        all_progressions: allLevels,
+        sets: getSets.all(sessionId, pe.exercise_id) as SetRow[]
+      };
+    });
   }
 
   return { session, user, exercises };
@@ -145,6 +166,33 @@ export const actions: Actions = {
          VALUES (?, ?, ?, ?, ?, ?)`
       ).run(sessionId, exerciseId, setNumber, level, reps, durationS);
     }
+
+    return { success: true };
+  },
+
+  setLevel: async ({ params, request }) => {
+    const sessionId = parseId(params.id);
+    const db = getDb();
+    const session = db
+      .prepare('SELECT user_id, completed_at FROM sessions WHERE id = ?')
+      .get(sessionId) as { user_id: number; completed_at: number | null } | undefined;
+    if (!session) throw error(404, 'Sesja nie istnieje');
+    if (session.completed_at) return fail(400, { message: 'Sesja zakończona' });
+
+    const form = await request.formData();
+    const exerciseId = Number(form.get('exercise_id'));
+    const level = Number(form.get('level'));
+    if (!Number.isInteger(exerciseId) || !Number.isInteger(level)) {
+      return fail(400, { message: 'Bad data' });
+    }
+
+    setManualLevel(db, session.user_id, exerciseId, level);
+
+    // Usuwamy serie tego ćwiczenia z bieżącej sesji - target się zmienił, stare wartości
+    // byłyby porównywane z nowym celem co byłoby mylące
+    db.prepare(
+      `DELETE FROM sets WHERE session_id = ? AND exercise_id = ?`
+    ).run(sessionId, exerciseId);
 
     return { success: true };
   },

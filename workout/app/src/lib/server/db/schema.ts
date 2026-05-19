@@ -91,4 +91,13 @@ CREATE TABLE IF NOT EXISTS meta (
   key   TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS user_exercise_level (
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  exercise_id INTEGER NOT NULL REFERENCES exercises(id) ON DELETE CASCADE,
+  level       INTEGER NOT NULL,
+  source      TEXT NOT NULL DEFAULT 'auto' CHECK (source IN ('auto','manual')),
+  updated_at  INTEGER NOT NULL DEFAULT (unixepoch()),
+  PRIMARY KEY (user_id, exercise_id)
+);
 `;
