@@ -1,0 +1,37 @@
+# Node / SvelteKit
+node_modules/
+.svelte-kit/
+build/
+.DS_Store
+*.log
+npm-debug.log*
+
+# Local data (nigdy nie commitować)
+data/
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+
+# Edytor
+.vscode/
+.idea/
+*.swp
+
+# Środowisko
+.env
+.env.*
+!.env.example
+
+# OneDrive
+~$*
+
+# Wewnętrzna dokumentacja i materiały robocze - NIE pushować na publiczne repo
+CLAUDE.md
+inventory.md
+exercises.md
+progression-rules.md
+plans/
+
+# Plan/notes folder (lokalnie - dla narzędzi typu Claude plan mode)
+.plans/
