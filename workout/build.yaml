@@ -1,8 +1,3 @@
 build_from:
-  aarch64: ghcr.io/hassio-addons/base-nodejs/aarch64:1.2.0
-  amd64: ghcr.io/hassio-addons/base-nodejs/amd64:1.2.0
-labels:
-  org.opencontainers.image.title: Workout
-  org.opencontainers.image.description: Trening kalisteniki dla dwóch osób
-  org.opencontainers.image.source: https://github.com/edekm/workout-addon
-  org.opencontainers.image.licenses: MIT
+  aarch64: ghcr.io/home-assistant/aarch64-base:latest
+  amd64: ghcr.io/home-assistant/amd64-base:latest

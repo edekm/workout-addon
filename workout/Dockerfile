@@ -1,17 +1,19 @@
-ARG BUILD_FROM
-FROM $BUILD_FROM
+ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base:latest
+FROM ${BUILD_FROM}
 
 ENV LANG=C.UTF-8 \
     NODE_ENV=production \
     PORT=3000
 
+RUN apk add --no-cache nodejs npm
+
 WORKDIR /app
 
 COPY app/package.json app/package-lock.json* ./
-RUN npm ci --omit=dev || npm install --omit=dev
+RUN npm install
 
 COPY app/ ./
-RUN npm run build
+RUN npm run build && npm prune --omit=dev
 
 COPY run.sh /run.sh
 RUN chmod a+x /run.sh
