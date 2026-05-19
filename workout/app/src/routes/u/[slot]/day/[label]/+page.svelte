@@ -25,6 +25,8 @@
       category: string;
       equipment_ref: string;
       progression: Progression;
+      promoted?: boolean;
+      last_sets?: Array<{ set_number: number; reps: number | null; duration_s: number | null }>;
     }>;
     activeSession: { id: number } | null;
   };
@@ -36,10 +38,19 @@
       const s = p.target_duration_s % 60;
       return m > 0 ? `${m} min${s > 0 ? ` ${s}s` : ''}` : `${s}s`;
     }
-    if (p.target_reps_min != null && p.target_reps_max != null) {
-      return `${p.target_reps_min}-${p.target_reps_max} powt.`;
+    if (p.target_reps_max != null) {
+      return `${p.target_reps_max} powt.`;
     }
     return '—';
+  }
+
+  function lastSummary(
+    lastSets: Array<{ reps: number | null; duration_s: number | null }> | undefined
+  ): string {
+    if (!lastSets || lastSets.length === 0) return '—';
+    return lastSets
+      .map((s) => (s.reps != null ? String(s.reps) : `${s.duration_s}s`))
+      .join(', ');
   }
 
   function categoryColor(cat: string): string {
@@ -75,13 +86,20 @@
               <h3 class="font-semibold text-neutral-900">{it.name_pl}</h3>
             </div>
             {#if it.progression}
-              <p class="mt-1 text-sm text-neutral-600">
-                <span class="font-medium">L{it.progression.level}:</span>
-                {it.progression.variant_name}
+              <p class="mt-1 flex items-center gap-2 text-sm text-neutral-600">
+                <span><span class="font-medium">L{it.progression.level}:</span> {it.progression.variant_name}</span>
+                {#if it.promoted}
+                  <span class="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium uppercase text-emerald-700">
+                    ↑ Awans
+                  </span>
+                {/if}
               </p>
             {/if}
             <p class="mt-1 text-xs text-neutral-500">
               {it.target_sets} × {target(it.progression)} · odp. {it.rest_seconds}s
+            </p>
+            <p class="mt-0.5 text-xs text-neutral-400">
+              Ostatnio: <span class="font-mono">{lastSummary(it.last_sets)}</span>
             </p>
             {#if it.pe_notes}
               <p class="mt-1 text-xs italic text-neutral-400">{it.pe_notes}</p>

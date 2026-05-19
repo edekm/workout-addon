@@ -1,6 +1,7 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { Actions, ServerLoad } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
+import { resolveLevel } from '$lib/server/db/progression';
 
 type ProgressionRow = {
   level: number;
@@ -73,11 +74,40 @@ export const load: ServerLoad = ({ params }) => {
      FROM progressions WHERE exercise_id = ? AND level = ?`
   );
 
+  const getLastSetsForExerciseLevel = db.prepare(
+    `SELECT st.set_number, st.reps, st.duration_s
+     FROM sets st
+     WHERE st.session_id = (
+       SELECT s.id FROM sessions s
+       JOIN sets st2 ON st2.session_id = s.id
+       WHERE s.user_id = ?
+         AND s.completed_at IS NOT NULL
+         AND st2.exercise_id = ?
+         AND st2.level = ?
+       ORDER BY s.completed_at DESC
+       LIMIT 1
+     )
+     AND st.exercise_id = ?
+     ORDER BY st.set_number`
+  );
+
   const items = exercises.map((ex) => {
-    const prog = getProgression.get(ex.exercise_id, ex.start_level) as
+    const eff = resolveLevel(db, user.id, ex.exercise_id, ex.start_level);
+    const prog = getProgression.get(ex.exercise_id, eff.level) as
       | ProgressionRow
       | undefined;
-    return { ...ex, progression: prog ?? null };
+    const lastSets = getLastSetsForExerciseLevel.all(
+      user.id,
+      ex.exercise_id,
+      eff.level,
+      ex.exercise_id
+    ) as Array<{ set_number: number; reps: number | null; duration_s: number | null }>;
+    return {
+      ...ex,
+      progression: prog ?? null,
+      promoted: eff.promoted,
+      last_sets: lastSets
+    };
   });
 
   const activeSession = db
