@@ -8,6 +8,8 @@ type ProgressionSeed = {
   notes?: string;
 };
 
+type Location = 'gym1' | 'gym2' | 'home';
+
 type ExerciseSeed = {
   slug: string;
   name_pl: string;
@@ -15,6 +17,7 @@ type ExerciseSeed = {
   category: 'pull' | 'push' | 'legs' | 'core' | 'cardio' | 'mobility' | 'skill';
   equipment_ref: string;
   technique_md?: string;
+  locations?: Location[]; // domyślnie ['gym1']
   progressions: ProgressionSeed[];
 };
 
@@ -380,6 +383,9 @@ export function seed(db: Database.Database) {
       (exercise_id, level, variant_name, target_reps_min, target_reps_max, target_duration_s, notes)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
+  const insertLocation = db.prepare(
+    `INSERT OR IGNORE INTO exercise_locations (exercise_id, location) VALUES (?, ?)`
+  );
   const findExerciseBySlug = db.prepare('SELECT id FROM exercises WHERE slug = ?');
 
   const tx = db.transaction(() => {
@@ -398,6 +404,11 @@ export function seed(db: Database.Database) {
           technique_md: ex.technique_md ?? null
         });
         exId = Number(info.lastInsertRowid);
+        // Nowemu ćwiczeniu wpisujemy lokalizacje (default gym1 - KOMPAN parkowa).
+        // Dla istniejących ćwiczeń lokalizacje obsługuje migrate_v3_default_locations
+        // lub edycja w UI biblioteki.
+        const locs = ex.locations ?? ['gym1'];
+        for (const loc of locs) insertLocation.run(exId, loc);
       }
       ex.progressions.forEach((p, idx) => {
         insertProgression.run(

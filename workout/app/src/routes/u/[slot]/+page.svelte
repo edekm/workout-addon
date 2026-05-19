@@ -63,13 +63,22 @@
     </p>
   {/if}
 
-  <a
-    href="{data.user.slot}/stats"
-    class="mb-6 flex items-center justify-between rounded-xl bg-white p-3 shadow-sm hover:bg-neutral-50"
-  >
-    <span class="font-medium text-neutral-900">Statystyki i progresja</span>
-    <span class="text-neutral-400">→</span>
-  </a>
+  <div class="mb-6 flex flex-col gap-2">
+    <a
+      href="{data.user.slot}/stats"
+      class="flex items-center justify-between rounded-xl bg-white p-3 shadow-sm hover:bg-neutral-50"
+    >
+      <span class="font-medium text-neutral-900">Statystyki i progresja</span>
+      <span class="text-neutral-400">→</span>
+    </a>
+    <a
+      href="../library"
+      class="flex items-center justify-between rounded-xl bg-white p-3 shadow-sm hover:bg-neutral-50"
+    >
+      <span class="font-medium text-neutral-900">Biblioteka ćwiczeń</span>
+      <span class="text-neutral-400">→</span>
+    </a>
+  </div>
 
   <section>
     <h2 class="mb-2 text-xs uppercase tracking-wider text-neutral-400">Ostatnie sesje</h2>

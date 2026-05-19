@@ -8,10 +8,20 @@ CREATE TABLE IF NOT EXISTS exercises (
   equipment_ref TEXT NOT NULL,
   technique_md  TEXT,
   video_url     TEXT,
+  is_archived   INTEGER NOT NULL DEFAULT 0,
   created_at    INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
 CREATE INDEX IF NOT EXISTS idx_exercises_category ON exercises(category);
+CREATE INDEX IF NOT EXISTS idx_exercises_archived ON exercises(is_archived);
+
+CREATE TABLE IF NOT EXISTS exercise_locations (
+  exercise_id INTEGER NOT NULL REFERENCES exercises(id) ON DELETE CASCADE,
+  location    TEXT NOT NULL CHECK (location IN ('gym1','gym2','home')),
+  PRIMARY KEY (exercise_id, location)
+);
+
+CREATE INDEX IF NOT EXISTS idx_exercise_locations_loc ON exercise_locations(location);
 
 CREATE TABLE IF NOT EXISTS progressions (
   id                INTEGER PRIMARY KEY AUTOINCREMENT,

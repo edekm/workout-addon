@@ -20,6 +20,16 @@
     {/each}
   </div>
 
+  <div class="mt-8 flex flex-col gap-2">
+    <a
+      href="library"
+      class="flex items-center justify-between rounded-xl bg-white px-4 py-3 text-sm shadow-sm hover:bg-neutral-50"
+    >
+      <span class="font-medium text-neutral-900">Biblioteka ćwiczeń</span>
+      <span class="text-neutral-400">→</span>
+    </a>
+  </div>
+
   <footer class="mt-auto pt-8 pb-4 text-center">
     <a href="api/health" class="text-xs text-neutral-400 underline">/api/health</a>
   </footer>
