@@ -3,7 +3,6 @@
     user: { id: number; slot: string; name: string };
     plan: { id: number; name: string; description: string | null } | null;
     days: Array<{ label: string; exercise_count: number }>;
-    activeSession: { id: number; day_label: string | null; started_at: number } | null;
     recentSessions: Array<{
       id: number;
       day_label: string | null;
@@ -25,18 +24,6 @@
     <a href="../" class="text-neutral-500 hover:text-neutral-900">←</a>
     <h1 class="text-xl font-bold text-neutral-900">{data.user.name}</h1>
   </header>
-
-  {#if data.activeSession}
-    <a
-      href="../session/{data.activeSession.id}"
-      class="mb-6 block rounded-2xl bg-amber-100 p-4 shadow-sm ring-2 ring-amber-300 transition hover:bg-amber-50"
-    >
-      <p class="text-xs uppercase tracking-wider text-amber-700">Sesja w toku</p>
-      <p class="mt-1 font-semibold text-amber-900">
-        {data.activeSession.day_label ?? 'Sesja'} → kliknij, aby wznowić
-      </p>
-    </a>
-  {/if}
 
   {#if data.plan}
     <section class="mb-6 rounded-2xl bg-white p-4 shadow-sm">

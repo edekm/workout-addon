@@ -28,7 +28,6 @@
       promoted?: boolean;
       last_sets?: Array<{ set_number: number; reps: number | null; duration_s: number | null }>;
     }>;
-    activeSession: { id: number } | null;
   };
 
   function target(p: Progression): string {
@@ -118,7 +117,7 @@
       type="submit"
       class="w-full rounded-2xl bg-neutral-900 px-6 py-4 text-base font-semibold text-white shadow-sm transition hover:bg-neutral-800 active:scale-[0.99]"
     >
-      {data.activeSession ? 'Wznów sesję' : 'Rozpocznij sesję'}
+      Rozpocznij sesję
     </button>
   </form>
 </main>

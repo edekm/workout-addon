@@ -110,15 +110,7 @@ export const load: ServerLoad = ({ params }) => {
     };
   });
 
-  const activeSession = db
-    .prepare(
-      `SELECT id FROM sessions
-       WHERE user_id = ? AND day_label = ? AND completed_at IS NULL
-       ORDER BY started_at DESC LIMIT 1`
-    )
-    .get(user.id, dayLabel) as { id: number } | undefined;
-
-  return { user, plan, dayLabel, items, activeSession: activeSession ?? null };
+  return { user, plan, dayLabel, items };
 };
 
 export const actions: Actions = {
@@ -140,26 +132,16 @@ export const actions: Actions = {
       )
       .get(user.id) as { id: number } | undefined;
 
-    const existing = db
-      .prepare(
-        `SELECT id FROM sessions
-         WHERE user_id = ? AND day_label = ? AND completed_at IS NULL
-         ORDER BY started_at DESC LIMIT 1`
-      )
-      .get(user.id, dayLabel) as { id: number } | undefined;
+    // "Albo się ćwiczy albo nie" - usuwamy wszystkie niezakończone sesje tego usera
+    // (nie tylko tego dnia) zanim utworzymy nową. CASCADE usuwa sety.
+    db.prepare(
+      `DELETE FROM sessions WHERE user_id = ? AND completed_at IS NULL`
+    ).run(user.id);
 
-    let sessionId: number;
-    if (existing) {
-      sessionId = existing.id;
-    } else {
-      const info = db
-        .prepare(
-          `INSERT INTO sessions (user_id, plan_id, day_label)
-           VALUES (?, ?, ?)`
-        )
-        .run(user.id, plan?.id ?? null, dayLabel);
-      sessionId = Number(info.lastInsertRowid);
-    }
+    const info = db
+      .prepare(`INSERT INTO sessions (user_id, plan_id, day_label) VALUES (?, ?, ?)`)
+      .run(user.id, plan?.id ?? null, dayLabel);
+    const sessionId = Number(info.lastInsertRowid);
 
     throw redirect(303, `${locals.ingressPath}/session/${sessionId}`);
   }

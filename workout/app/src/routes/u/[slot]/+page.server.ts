@@ -33,14 +33,6 @@ export const load: ServerLoad = ({ params }) => {
       .all(plan.id) as Array<{ label: string; exercise_count: number }>;
   }
 
-  const activeSession = db
-    .prepare(
-      `SELECT id, day_label, started_at
-       FROM sessions WHERE user_id = ? AND completed_at IS NULL
-       ORDER BY started_at DESC LIMIT 1`
-    )
-    .get(user.id) as { id: number; day_label: string | null; started_at: number } | undefined;
-
   const recentSessions = db
     .prepare(
       `SELECT s.id, s.day_label, s.started_at, s.completed_at,
@@ -76,7 +68,6 @@ export const load: ServerLoad = ({ params }) => {
     user,
     plan,
     days,
-    activeSession: activeSession ?? null,
     recentSessions,
     suggestedDay
   };
