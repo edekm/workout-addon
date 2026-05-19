@@ -23,6 +23,8 @@ type PlanExerciseRow = {
   slug: string;
   name_pl: string;
   category: string;
+  equipment_ref: string;
+  technique_md: string | null;
 };
 
 type ProgressionRow = {
@@ -72,7 +74,7 @@ export const load: ServerLoad = ({ params }) => {
         `SELECT
            pe.id AS pe_id, pe.ord, pe.exercise_id, pe.start_level,
            pe.target_sets, pe.rest_seconds, pe.notes AS pe_notes,
-           e.slug, e.name_pl, e.category
+           e.slug, e.name_pl, e.category, e.equipment_ref, e.technique_md
          FROM plan_exercises pe
          JOIN exercises e ON e.id = pe.exercise_id
          WHERE pe.plan_id = ? AND pe.day_label = ?
@@ -116,10 +118,8 @@ export const actions: Actions = {
     const level = Number(form.get('level'));
     const repsRaw = form.get('reps');
     const durationRaw = form.get('duration_s');
-    const rpeRaw = form.get('rpe');
     const reps = repsRaw && repsRaw !== '' ? Number(repsRaw) : null;
     const durationS = durationRaw && durationRaw !== '' ? Number(durationRaw) : null;
-    const rpe = rpeRaw && rpeRaw !== '' ? Number(rpeRaw) : null;
 
     if (!Number.isInteger(exerciseId) || !Number.isInteger(setNumber) || !Number.isInteger(level)) {
       return fail(400, { message: 'Złe dane' });
@@ -136,14 +136,14 @@ export const actions: Actions = {
 
     if (existing) {
       db.prepare(
-        `UPDATE sets SET level = ?, reps = ?, duration_s = ?, rpe = ?, recorded_at = unixepoch()
+        `UPDATE sets SET level = ?, reps = ?, duration_s = ?, recorded_at = unixepoch()
          WHERE id = ?`
-      ).run(level, reps, durationS, rpe, existing.id);
+      ).run(level, reps, durationS, existing.id);
     } else {
       db.prepare(
-        `INSERT INTO sets (session_id, exercise_id, set_number, level, reps, duration_s, rpe)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
-      ).run(sessionId, exerciseId, setNumber, level, reps, durationS, rpe);
+        `INSERT INTO sets (session_id, exercise_id, set_number, level, reps, duration_s)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      ).run(sessionId, exerciseId, setNumber, level, reps, durationS);
     }
 
     return { success: true };

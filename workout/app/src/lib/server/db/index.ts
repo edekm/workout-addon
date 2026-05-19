@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { SCHEMA_SQL } from './schema';
 import { seed } from './seed';
 import { seedPlans } from './plans-seed';
+import { ensureTechniques } from './techniques';
 
 const DATA_DIR = process.env.DATA_DIR ?? '/data';
 const DB_PATH = process.env.DB_PATH ?? join(DATA_DIR, 'workout.db');
@@ -31,6 +32,7 @@ export function getDb(): Database.Database {
 
   syncUserNames(db);
   seedPlans(db);
+  ensureTechniques(db);
 
   dbInstance = db;
   return db;

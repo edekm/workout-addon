@@ -56,5 +56,28 @@ export const load: ServerLoad = ({ params }) => {
     set_count: number;
   }>;
 
-  return { user, plan, days, activeSession: activeSession ?? null, recentSessions };
+  // "Co dziś" - następny dzień po ostatniej zakończonej sesji (rotacja).
+  let suggestedDay: string | null = null;
+  if (days.length > 0) {
+    if (recentSessions.length === 0) {
+      suggestedDay = days[0].label;
+    } else {
+      const last = recentSessions[0].day_label;
+      const idx = days.findIndex((d) => d.label === last);
+      if (idx === -1 || idx === days.length - 1) {
+        suggestedDay = days[0].label;
+      } else {
+        suggestedDay = days[idx + 1].label;
+      }
+    }
+  }
+
+  return {
+    user,
+    plan,
+    days,
+    activeSession: activeSession ?? null,
+    recentSessions,
+    suggestedDay
+  };
 };

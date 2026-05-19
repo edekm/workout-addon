@@ -11,6 +11,7 @@
       completed_at: number | null;
       set_count: number;
     }>;
+    suggestedDay: string | null;
   };
 
   function fmtDate(unix: number): string {
@@ -47,14 +48,23 @@
     </section>
 
     <section class="mb-6">
-      <h2 class="mb-2 text-xs uppercase tracking-wider text-neutral-400">Dni</h2>
+      <div class="mb-2 flex items-baseline justify-between">
+        <h2 class="text-xs uppercase tracking-wider text-neutral-400">Dni</h2>
+        {#if data.suggestedDay}
+          <span class="text-xs text-emerald-700">sugerowany na dziś ↓</span>
+        {/if}
+      </div>
       <div class="flex flex-col gap-2">
         {#each data.days as day}
+          {@const suggested = day.label === data.suggestedDay}
           <a
             href="{data.user.slot}/day/{encodeURIComponent(day.label)}"
-            class="flex items-center justify-between rounded-xl bg-white px-4 py-4 shadow-sm transition hover:shadow-md active:scale-[0.99]"
+            class="flex items-center justify-between rounded-xl px-4 py-4 shadow-sm transition hover:shadow-md active:scale-[0.99]
+                   {suggested ? 'bg-emerald-50 ring-2 ring-emerald-300' : 'bg-white'}"
           >
-            <span class="font-medium text-neutral-900">{day.label}</span>
+            <span class="font-medium {suggested ? 'text-emerald-900' : 'text-neutral-900'}">
+              {day.label}
+            </span>
             <span class="text-sm text-neutral-400">{day.exercise_count} ćw.</span>
           </a>
         {/each}
@@ -73,11 +83,16 @@
     {:else}
       <ul class="flex flex-col gap-1">
         {#each data.recentSessions as s}
-          <li class="flex justify-between rounded-lg bg-white px-3 py-2 text-sm shadow-sm">
-            <span>{s.day_label ?? '—'}</span>
-            <span class="text-neutral-400">
-              {s.set_count} serii · {fmtDate(s.started_at)}
-            </span>
+          <li>
+            <a
+              href="../session/{s.id}"
+              class="flex justify-between rounded-lg bg-white px-3 py-2 text-sm shadow-sm hover:bg-neutral-50"
+            >
+              <span class="text-neutral-900">{s.day_label ?? '—'}</span>
+              <span class="text-neutral-400">
+                {s.set_count} serii · {fmtDate(s.started_at)}
+              </span>
+            </a>
           </li>
         {/each}
       </ul>
