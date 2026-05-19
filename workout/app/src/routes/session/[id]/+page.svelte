@@ -20,14 +20,6 @@
     duration_s: number | null;
   };
 
-  type ProgressionFull = {
-    level: number;
-    variant_name: string;
-    target_reps_min: number | null;
-    target_reps_max: number | null;
-    target_duration_s: number | null;
-  };
-
   type ExItem = {
     pe_id: number;
     ord: number;
@@ -43,8 +35,6 @@
     technique_md: string | null;
     progression: Progression;
     promoted?: boolean;
-    level_source?: 'auto' | 'manual' | 'plan';
-    all_progressions?: ProgressionFull[];
     last_sets?: Array<{ set_number: number; reps: number | null; duration_s: number | null }>;
     sets: SetItem[];
   };
@@ -71,40 +61,8 @@
   let phase: 'log' | 'rest' = 'log';
   let inputValue = '';
   let showTechnique = false;
-  let showLevelMenu = false;
   let saving = false;
   let saveError = '';
-
-  async function changeLevel(exerciseId: number, level: number) {
-    saving = true;
-    saveError = '';
-    const fd = new FormData();
-    fd.append('exercise_id', String(exerciseId));
-    fd.append('level', String(level));
-    try {
-      const res = await fetch('?/setLevel', {
-        method: 'POST',
-        body: fd,
-        headers: { 'x-sveltekit-action': 'true' }
-      });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const result: any = deserialize(await res.text());
-      if (result?.type === 'failure' || result?.type === 'error') {
-        throw new Error(result?.data?.message ?? result?.error?.message ?? 'Błąd');
-      }
-      // Reload danych z serwera (invalidate)
-      const { invalidateAll } = await import('$app/navigation');
-      await invalidateAll();
-      showLevelMenu = false;
-      setNum = 1;
-      phase = 'log';
-      syncInputFromExisting();
-    } catch (e) {
-      saveError = 'Nie zmieniono poziomu: ' + ((e as Error).message ?? 'błąd');
-    } finally {
-      saving = false;
-    }
-  }
 
   // Timer odpoczynku i timer ćwiczenia (duration mode)
   let restElapsed = 0; // sekundy od startu odpoczynku
@@ -145,7 +103,6 @@
 
   function syncInputFromExisting() {
     saveError = '';
-    showLevelMenu = false;
     showTechnique = false;
     // Czytamy bezpośrednio z data, nie z reactive $: (które jeszcze nie przeliczyło)
     const ex = data.exercises[exIdx];
@@ -581,22 +538,12 @@
           {currentEx.category}
         </span>
       </div>
-      <div class="flex items-start justify-between gap-2">
-        <h2 class="text-xl font-bold text-neutral-900">{currentEx.name_pl}</h2>
-        <button
-          type="button"
-          on:click={() => (showLevelMenu = !showLevelMenu)}
-          class="shrink-0 rounded-lg px-2 py-1 text-lg text-neutral-400 hover:bg-neutral-100 hover:text-neutral-900"
-          aria-label="Opcje"
-        >
-          ⋯
-        </button>
-      </div>
+      <h2 class="text-xl font-bold text-neutral-900">{currentEx.name_pl}</h2>
       {#if currentEx.progression}
-        <p class="mt-0.5 text-sm text-neutral-600">
-          L{currentEx.progression.level}: {currentEx.progression.variant_name}
+        <p class="mt-0.5 flex items-center gap-2 text-sm text-neutral-600">
+          <span>L{currentEx.progression.level}: {currentEx.progression.variant_name}</span>
           {#if currentEx.promoted}
-            <span class="ml-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium uppercase text-emerald-700">
+            <span class="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium uppercase text-emerald-700">
               ↑ Awans
             </span>
           {/if}
@@ -605,47 +552,6 @@
       <p class="mt-0.5 text-xs text-neutral-500">
         {equipmentLabel(currentEx.equipment_ref)} · odpoczynek {currentEx.rest_seconds}s
       </p>
-
-      {#if showLevelMenu && currentEx.all_progressions}
-        <div class="mt-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-          <p class="mb-2 text-xs uppercase tracking-wider text-neutral-500">
-            Zmień poziom (resetuje serie tego ćwiczenia)
-          </p>
-          <div class="flex flex-col gap-1">
-            {#each currentEx.all_progressions as p}
-              {@const isCurrent = currentEx.progression?.level === p.level}
-              <button
-                type="button"
-                disabled={saving || isCurrent}
-                on:click={() => changeLevel(currentEx.exercise_id, p.level)}
-                class="flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm
-                  {isCurrent ? 'bg-neutral-900 text-white' : 'bg-white hover:bg-neutral-100'}"
-              >
-                <span>
-                  <span class="font-medium">L{p.level}:</span> {p.variant_name}
-                </span>
-                <span class="text-xs opacity-60">
-                  {#if p.target_duration_s != null}
-                    {p.target_duration_s}s
-                  {:else if p.target_reps_max != null}
-                    {p.target_reps_min}-{p.target_reps_max}
-                  {/if}
-                </span>
-              </button>
-            {/each}
-          </div>
-          {#if currentEx.promoted}
-            <p class="mt-2 text-xs text-neutral-500">
-              Awans był automatyczny - możesz cofnąć wybierając poprzedni poziom.
-            </p>
-          {:else if currentEx.level_source === 'manual'}
-            <p class="mt-2 text-xs text-neutral-500">
-              Poziom ustawiony ręcznie. Auto-awans nadal działa - po 2 sesjach
-              w celu system sam podbije wariant.
-            </p>
-          {/if}
-        </div>
-      {/if}
 
       {#if currentEx.technique_md}
         <button

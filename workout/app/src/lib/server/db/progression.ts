@@ -3,7 +3,6 @@ import type Database from 'better-sqlite3';
 export type EffectiveLevel = {
   level: number;
   promoted: boolean; // czy podniesione automatycznie w tym wywołaniu
-  source: 'auto' | 'manual' | 'plan';
 };
 
 type ProgRow = {
@@ -16,13 +15,14 @@ type ProgRow = {
 type SessionAgg = { session_id: number; ok: number; total: number };
 
 /**
- * Pobiera lub wylicza aktualny poziom user'a dla danego ćwiczenia.
+ * Wylicza aktualny poziom usera dla danego ćwiczenia.
+ *
  * Auto-promocja: gdy ostatnie 2 zakończone sesje miały wszystkie serie tego
  * ćwiczenia (na aktualnym levelu) >= cel (target_reps_max / target_duration_s),
- * level automatycznie wskakuje wyżej (jeśli istnieje wyższy w progressions).
+ * level wskakuje wyżej (jeśli istnieje wyższy w progressions).
  *
- * Zapisuje wynik do user_exercise_level (source='auto') żeby przy kolejnym
- * wywołaniu nie liczyć ponownie i żeby user mógł cofnąć przez "..." menu.
+ * Zapisuje wynik do user_exercise_level żeby kolejne wywołanie nie liczyło
+ * ponownie. Jeśli pusto - fallback do planStartLevel (typowo 1).
  */
 export function resolveLevel(
   db: Database.Database,
@@ -32,20 +32,12 @@ export function resolveLevel(
 ): EffectiveLevel {
   const existing = db
     .prepare(
-      'SELECT level, source FROM user_exercise_level WHERE user_id = ? AND exercise_id = ?'
+      'SELECT level FROM user_exercise_level WHERE user_id = ? AND exercise_id = ?'
     )
-    .get(userId, exerciseId) as { level: number; source: 'auto' | 'manual' } | undefined;
+    .get(userId, exerciseId) as { level: number } | undefined;
 
   const baseLevel = existing?.level ?? planStartLevel;
-  const baseSource: 'auto' | 'manual' | 'plan' = existing
-    ? existing.source
-    : 'plan';
 
-  // Manual jest tylko jednorazową korektą punktu startowego - nie blokuje
-  // auto-promocji. Jeśli user na manualnie ustawionym levelu wbije 2 sesje
-  // z hit max, normalnie awansujemy i source wraca do 'auto'.
-
-  // Pobierz cel dla baseLevel
   const baseProg = db
     .prepare(
       `SELECT level, target_reps_min, target_reps_max, target_duration_s
@@ -53,9 +45,8 @@ export function resolveLevel(
     )
     .get(exerciseId, baseLevel) as ProgRow | undefined;
 
-  if (!baseProg) return { level: baseLevel, promoted: false, source: baseSource };
+  if (!baseProg) return { level: baseLevel, promoted: false };
 
-  // Czy istnieje wyższy level w progresji?
   const nextProg = db
     .prepare(
       `SELECT MIN(level) AS next_level FROM progressions
@@ -64,9 +55,8 @@ export function resolveLevel(
     .get(exerciseId, baseLevel) as { next_level: number | null } | undefined;
 
   const nextLevel = nextProg?.next_level ?? null;
-  if (nextLevel == null) return { level: baseLevel, promoted: false, source: baseSource };
+  if (nextLevel == null) return { level: baseLevel, promoted: false };
 
-  // Pobierz 2 ostatnie zakończone sesje gdzie user logował to ćwiczenie na baseLevel
   const recentSessions = db
     .prepare(
       `SELECT
@@ -101,50 +91,16 @@ export function resolveLevel(
     recentSessions.every((r) => r.total > 0 && r.ok === r.total);
 
   if (!passed) {
-    return { level: baseLevel, promoted: false, source: baseSource };
+    return { level: baseLevel, promoted: false };
   }
 
-  // Auto-promocja
   db.prepare(
-    `INSERT INTO user_exercise_level (user_id, exercise_id, level, source, updated_at)
-     VALUES (?, ?, ?, 'auto', unixepoch())
+    `INSERT INTO user_exercise_level (user_id, exercise_id, level, updated_at)
+     VALUES (?, ?, ?, unixepoch())
      ON CONFLICT(user_id, exercise_id) DO UPDATE SET
        level = excluded.level,
-       source = 'auto',
        updated_at = excluded.updated_at`
   ).run(userId, exerciseId, nextLevel);
 
-  return { level: nextLevel, promoted: true, source: 'auto' };
-}
-
-export function setManualLevel(
-  db: Database.Database,
-  userId: number,
-  exerciseId: number,
-  level: number
-) {
-  db.prepare(
-    `INSERT INTO user_exercise_level (user_id, exercise_id, level, source, updated_at)
-     VALUES (?, ?, ?, 'manual', unixepoch())
-     ON CONFLICT(user_id, exercise_id) DO UPDATE SET
-       level = excluded.level,
-       source = 'manual',
-       updated_at = excluded.updated_at`
-  ).run(userId, exerciseId, level);
-}
-
-export function revertLevel(
-  db: Database.Database,
-  userId: number,
-  exerciseId: number,
-  toLevel: number
-) {
-  db.prepare(
-    `INSERT INTO user_exercise_level (user_id, exercise_id, level, source, updated_at)
-     VALUES (?, ?, ?, 'manual', unixepoch())
-     ON CONFLICT(user_id, exercise_id) DO UPDATE SET
-       level = excluded.level,
-       source = 'manual',
-       updated_at = excluded.updated_at`
-  ).run(userId, exerciseId, toLevel);
+  return { level: nextLevel, promoted: true };
 }
