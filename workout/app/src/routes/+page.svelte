@@ -1,13 +1,12 @@
 <script lang="ts">
-  const user1 = (typeof process !== 'undefined' && process.env?.USER1_NAME) || 'M';
-  const user2 = (typeof process !== 'undefined' && process.env?.USER2_NAME) || 'Ona';
+  export let data: { user1: string; user2: string };
 </script>
 
 <main>
   <h1>Workout</h1>
   <p>Add-on uruchomiony.</p>
-  <p>Profile: <strong>{user1}</strong>, <strong>{user2}</strong></p>
-  <p><a href="/api/health">/api/health</a></p>
+  <p>Profile: <strong>{data.user1}</strong>, <strong>{data.user2}</strong></p>
+  <p><a href="api/health">/api/health</a></p>
 </main>
 
 <style>
