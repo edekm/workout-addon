@@ -10,7 +10,7 @@ RUN apk add --no-cache nodejs npm
 WORKDIR /app
 
 COPY app/package.json app/package-lock.json* ./
-RUN npm install
+RUN npm install --include=dev
 
 COPY app/ ./
 RUN npm run build && npm prune --omit=dev
