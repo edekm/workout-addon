@@ -27,11 +27,21 @@
 
   {#if data.plan}
     <section class="mb-6 rounded-2xl bg-white p-4 shadow-sm">
-      <h2 class="text-xs uppercase tracking-wider text-neutral-400">Aktywny plan</h2>
-      <p class="mt-1 font-semibold text-neutral-900">{data.plan.name}</p>
-      {#if data.plan.description}
-        <p class="mt-1 text-sm text-neutral-500">{data.plan.description}</p>
-      {/if}
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0 flex-1">
+          <h2 class="text-xs uppercase tracking-wider text-neutral-400">Aktywny plan</h2>
+          <p class="mt-1 font-semibold text-neutral-900">{data.plan.name}</p>
+          {#if data.plan.description}
+            <p class="mt-1 text-sm text-neutral-500">{data.plan.description}</p>
+          {/if}
+        </div>
+        <a
+          href="../plans"
+          class="shrink-0 text-xs text-neutral-500 underline hover:text-neutral-900"
+        >
+          zmień
+        </a>
+      </div>
     </section>
 
     <section class="mb-6">
@@ -58,9 +68,14 @@
       </div>
     </section>
   {:else}
-    <p class="rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
-      Brak aktywnego planu. Plany seedują się automatycznie przy starcie - sprawdź logi add-ona.
-    </p>
+    <a
+      href="../plans"
+      class="mb-6 block rounded-xl bg-amber-50 p-4 ring-1 ring-amber-200 hover:bg-amber-100"
+    >
+      <p class="text-sm font-medium text-amber-900">
+        Brak aktywnego planu — wybierz z biblioteki planów →
+      </p>
+    </a>
   {/if}
 
   <div class="mb-6 flex flex-col gap-2">
@@ -76,6 +91,13 @@
       class="flex items-center justify-between rounded-xl bg-white p-3 shadow-sm hover:bg-neutral-50"
     >
       <span class="font-medium text-neutral-900">Biblioteka ćwiczeń</span>
+      <span class="text-neutral-400">→</span>
+    </a>
+    <a
+      href="../plans"
+      class="flex items-center justify-between rounded-xl bg-white p-3 shadow-sm hover:bg-neutral-50"
+    >
+      <span class="font-medium text-neutral-900">Plany treningowe</span>
       <span class="text-neutral-400">→</span>
     </a>
   </div>

@@ -38,20 +38,19 @@ CREATE TABLE IF NOT EXISTS progressions (
 CREATE INDEX IF NOT EXISTS idx_progressions_exercise ON progressions(exercise_id);
 
 CREATE TABLE IF NOT EXISTS users (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  slot        TEXT NOT NULL UNIQUE CHECK (slot IN ('user1','user2')),
-  name        TEXT NOT NULL,
-  pin_hash    TEXT,
-  goals       TEXT,
-  created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  slot            TEXT NOT NULL UNIQUE CHECK (slot IN ('user1','user2')),
+  name            TEXT NOT NULL,
+  pin_hash        TEXT,
+  goals           TEXT,
+  active_plan_id  INTEGER REFERENCES plans(id) ON DELETE SET NULL,
+  created_at      INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
 CREATE TABLE IF NOT EXISTS plans (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name        TEXT NOT NULL,
   description TEXT,
-  is_active   INTEGER NOT NULL DEFAULT 1,
   created_at  INTEGER NOT NULL DEFAULT (unixepoch())
 );
 

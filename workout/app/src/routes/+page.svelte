@@ -28,6 +28,13 @@
       <span class="font-medium text-neutral-900">Biblioteka ćwiczeń</span>
       <span class="text-neutral-400">→</span>
     </a>
+    <a
+      href="plans"
+      class="flex items-center justify-between rounded-xl bg-white px-4 py-3 text-sm shadow-sm hover:bg-neutral-50"
+    >
+      <span class="font-medium text-neutral-900">Plany treningowe</span>
+      <span class="text-neutral-400">→</span>
+    </a>
   </div>
 
   <footer class="mt-auto pt-8 pb-4 text-center">

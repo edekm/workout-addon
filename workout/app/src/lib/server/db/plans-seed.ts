@@ -14,7 +14,9 @@ type PlanDay = {
 };
 
 type StarterPlan = {
-  user_slot: 'user1' | 'user2';
+  // owner_slot wskazuje któremu userowi ustawić ten plan jako aktywny przy seedzie.
+  // Plany są wspólne - oboje mogą używać dowolnego z istniejących planów.
+  owner_slot: 'user1' | 'user2';
   name: string;
   description: string;
   days: PlanDay[];
@@ -22,7 +24,7 @@ type StarterPlan = {
 
 const PLANS: StarterPlan[] = [
   {
-    user_slot: 'user1',
+    owner_slot: 'user1',
     name: 'Full-body 3x — siła i kalistenika',
     description: 'A: pull · B: push · C: legs + core. 3x/tydzień, fokus na progresję do skill-i.',
     days: [
@@ -62,7 +64,7 @@ const PLANS: StarterPlan[] = [
     ]
   },
   {
-    user_slot: 'user2',
+    owner_slot: 'user2',
     name: 'Full-body 3x — sylwetka i kondycja',
     description: 'A: lower-heavy · B: upper + cardio · C: lower + core. 3x/tydzień, fokus na pośladki i wytrzymałość.',
     days: [
@@ -113,20 +115,18 @@ function doSeedPlans(db: Database.Database) {
   const getUserId = db.prepare('SELECT id FROM users WHERE slot = ?');
   const getExerciseId = db.prepare('SELECT id FROM exercises WHERE slug = ?');
   const insertPlan = db.prepare(`
-    INSERT INTO plans (user_id, name, description, is_active)
-    VALUES (?, ?, ?, 1)
+    INSERT INTO plans (name, description) VALUES (?, ?)
   `);
   const insertPlanExercise = db.prepare(`
     INSERT INTO plan_exercises
       (plan_id, day_label, ord, exercise_id, start_level, target_sets, rest_seconds, notes)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
+  const setActivePlan = db.prepare('UPDATE users SET active_plan_id = ? WHERE id = ?');
 
   const tx = db.transaction(() => {
     for (const plan of PLANS) {
-      const user = getUserId.get(plan.user_slot) as { id: number } | undefined;
-      if (!user) continue;
-      const planInfo = insertPlan.run(user.id, plan.name, plan.description);
+      const planInfo = insertPlan.run(plan.name, plan.description);
       const planId = Number(planInfo.lastInsertRowid);
 
       for (const day of plan.days) {
@@ -144,6 +144,17 @@ function doSeedPlans(db: Database.Database) {
             item.notes ?? null
           );
         });
+      }
+
+      // Ustaw plan jako aktywny dla seedowanego owner_slot (tylko jeśli user nie ma już aktywnego)
+      const owner = getUserId.get(plan.owner_slot) as { id: number } | undefined;
+      if (owner) {
+        const u = db
+          .prepare('SELECT active_plan_id FROM users WHERE id = ?')
+          .get(owner.id) as { active_plan_id: number | null } | undefined;
+        if (u && u.active_plan_id == null) {
+          setActivePlan.run(planId, owner.id);
+        }
       }
     }
   });

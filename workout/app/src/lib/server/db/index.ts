@@ -21,6 +21,7 @@ export function getDb(): Database.Database {
 
   // Migracje strukturalne PRZED seed (żeby ALTER ADD COLUMN zadziałało dla starych baz).
   migrateAddArchivedColumn_v3(db);
+  migrateSharedPlans_v4(db);
 
   // seed jest idempotentny - INSERT OR IGNORE per progresja, exercise dodaje
   // się tylko gdy nie ma slugu. Dzięki temu nowe ćwiczenia dodane w późniejszych
@@ -59,6 +60,68 @@ function migrateAddArchivedColumn_v3(db: Database.Database) {
   const cols = db.prepare("PRAGMA table_info(exercises)").all() as Array<{ name: string }>;
   if (!cols.some((c) => c.name === 'is_archived')) {
     db.prepare('ALTER TABLE exercises ADD COLUMN is_archived INTEGER NOT NULL DEFAULT 0').run();
+  }
+}
+
+function migrateSharedPlans_v4(db: Database.Database) {
+  // Plans przechodzą z 'per user' na 'wspólne'. Dodajemy users.active_plan_id,
+  // przenosimy własność planów do user.active_plan_id, usuwamy plans.user_id.
+  // CREATE TABLE IF NOT EXISTS w SCHEMA_SQL nie pomoże dla starych baz - musimy
+  // rebuild table żeby pozbyć się user_id i is_active.
+
+  const userCols = db.prepare("PRAGMA table_info(users)").all() as Array<{ name: string }>;
+  const hasActivePlanId = userCols.some((c) => c.name === 'active_plan_id');
+
+  const planCols = db.prepare("PRAGMA table_info(plans)").all() as Array<{ name: string }>;
+  const hasUserId = planCols.some((c) => c.name === 'user_id');
+
+  if (hasActivePlanId && !hasUserId) return; // już zmigrowane
+
+  db.pragma('foreign_keys = OFF');
+  db.transaction(() => {
+    if (!hasActivePlanId) {
+      db.prepare(
+        'ALTER TABLE users ADD COLUMN active_plan_id INTEGER REFERENCES plans(id) ON DELETE SET NULL'
+      ).run();
+    }
+
+    if (hasUserId) {
+      // Przed dropowaniem user_id - skopiuj relację do users.active_plan_id.
+      // Bierzemy najnowszy aktywny plan każdego usera (jeśli kolumna is_active istnieje).
+      const hasIsActive = planCols.some((c) => c.name === 'is_active');
+      const orderByActive = hasIsActive ? 'is_active DESC, id DESC' : 'id DESC';
+      db.prepare(
+        `UPDATE users SET active_plan_id = (
+           SELECT id FROM plans p
+           WHERE p.user_id = users.id
+           ORDER BY ${orderByActive}
+           LIMIT 1
+         )
+         WHERE active_plan_id IS NULL`
+      ).run();
+
+      // Rebuild plans: drop user_id i is_active.
+      db.prepare(
+        `CREATE TABLE plans_new (
+           id          INTEGER PRIMARY KEY AUTOINCREMENT,
+           name        TEXT NOT NULL,
+           description TEXT,
+           created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+         )`
+      ).run();
+      db.prepare(
+        `INSERT INTO plans_new (id, name, description, created_at)
+         SELECT id, name, description, created_at FROM plans`
+      ).run();
+      db.prepare('DROP TABLE plans').run();
+      db.prepare('ALTER TABLE plans_new RENAME TO plans').run();
+    }
+  })();
+  db.pragma('foreign_keys = ON');
+
+  const fkCheck = db.prepare('PRAGMA foreign_key_check').all() as unknown[];
+  if (fkCheck.length > 0) {
+    console.warn('[workout] FK check po migrate_v4:', fkCheck);
   }
 }
 

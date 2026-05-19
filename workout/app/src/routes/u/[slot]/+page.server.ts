@@ -7,18 +7,20 @@ export const load: ServerLoad = ({ params }) => {
   const slot = params.slot;
   if (slot !== 'user1' && slot !== 'user2') throw error(404, 'Nieznany profil');
 
-  const user = db.prepare('SELECT id, slot, name FROM users WHERE slot = ?').get(slot) as
-    | { id: number; slot: string; name: string }
+  const user = db
+    .prepare('SELECT id, slot, name, active_plan_id FROM users WHERE slot = ?')
+    .get(slot) as
+    | { id: number; slot: string; name: string; active_plan_id: number | null }
     | undefined;
   if (!user) throw error(404, 'Profil nie istnieje');
 
-  const plan = db
-    .prepare(
-      `SELECT id, name, description
-       FROM plans WHERE user_id = ? AND is_active = 1
-       ORDER BY id DESC LIMIT 1`
-    )
-    .get(user.id) as { id: number; name: string; description: string | null } | undefined;
+  const plan = user.active_plan_id
+    ? (db
+        .prepare('SELECT id, name, description FROM plans WHERE id = ?')
+        .get(user.active_plan_id) as
+        | { id: number; name: string; description: string | null }
+        | undefined)
+    : undefined;
 
   let days: Array<{ label: string; exercise_count: number }> = [];
   if (plan) {

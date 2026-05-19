@@ -32,18 +32,17 @@ export const load: ServerLoad = ({ params }) => {
   const dayLabel = decodeURIComponent(params.label ?? '');
   if (slot !== 'user1' && slot !== 'user2') throw error(404, 'Nieznany profil');
 
-  const user = db.prepare('SELECT id, slot, name FROM users WHERE slot = ?').get(slot) as
-    | { id: number; slot: string; name: string }
+  const user = db
+    .prepare('SELECT id, slot, name, active_plan_id FROM users WHERE slot = ?')
+    .get(slot) as
+    | { id: number; slot: string; name: string; active_plan_id: number | null }
     | undefined;
   if (!user) throw error(404, 'Profil nie istnieje');
+  if (!user.active_plan_id) throw error(404, 'Brak aktywnego planu');
 
   const plan = db
-    .prepare(
-      `SELECT id, name FROM plans
-       WHERE user_id = ? AND is_active = 1
-       ORDER BY id DESC LIMIT 1`
-    )
-    .get(user.id) as { id: number; name: string } | undefined;
+    .prepare('SELECT id, name FROM plans WHERE id = ?')
+    .get(user.active_plan_id) as { id: number; name: string } | undefined;
   if (!plan) throw error(404, 'Brak aktywnego planu');
 
   const exercises = db
@@ -120,17 +119,10 @@ export const actions: Actions = {
     const dayLabel = decodeURIComponent(params.label ?? '');
     if (slot !== 'user1' && slot !== 'user2') throw error(400, 'Bad slot');
 
-    const user = db.prepare('SELECT id FROM users WHERE slot = ?').get(slot) as
-      | { id: number }
-      | undefined;
+    const user = db
+      .prepare('SELECT id, active_plan_id FROM users WHERE slot = ?')
+      .get(slot) as { id: number; active_plan_id: number | null } | undefined;
     if (!user) throw error(404, 'Brak usera');
-
-    const plan = db
-      .prepare(
-        `SELECT id FROM plans WHERE user_id = ? AND is_active = 1
-         ORDER BY id DESC LIMIT 1`
-      )
-      .get(user.id) as { id: number } | undefined;
 
     // "Albo się ćwiczy albo nie" - usuwamy wszystkie niezakończone sesje tego usera
     // (nie tylko tego dnia) zanim utworzymy nową. CASCADE usuwa sety.
@@ -140,7 +132,7 @@ export const actions: Actions = {
 
     const info = db
       .prepare(`INSERT INTO sessions (user_id, plan_id, day_label) VALUES (?, ?, ?)`)
-      .run(user.id, plan?.id ?? null, dayLabel);
+      .run(user.id, user.active_plan_id ?? null, dayLabel);
     const sessionId = Number(info.lastInsertRowid);
 
     throw redirect(303, `${locals.ingressPath}/session/${sessionId}`);
