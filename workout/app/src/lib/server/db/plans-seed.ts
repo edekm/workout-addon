@@ -32,29 +32,29 @@ const PLANS: StarterPlan[] = [
       {
         label: 'A · Pull',
         items: [
-          { slug: 'pull-up', start_level: 4, target_sets: 4, rest_seconds: 120, notes: 'główne pull' },
-          { slug: 'ring-row', start_level: 3, target_sets: 3, rest_seconds: 90 },
-          { slug: 'dip', start_level: 3, target_sets: 3, rest_seconds: 90, notes: 'przeciwwaga push' },
+          { slug: 'pull-up', start_level: 1, target_sets: 4, rest_seconds: 120, notes: 'główne pull' },
+          { slug: 'ring-row', start_level: 1, target_sets: 3, rest_seconds: 90 },
+          { slug: 'dip', start_level: 1, target_sets: 3, rest_seconds: 90, notes: 'przeciwwaga push' },
           { slug: 'hanging-knee-raise', start_level: 1, target_sets: 3, rest_seconds: 60 },
-          { slug: 'bike', start_level: 3, target_sets: 1, rest_seconds: 0, notes: 'finisher' }
+          { slug: 'bike', start_level: 1, target_sets: 1, rest_seconds: 0, notes: 'finisher' }
         ]
       },
       {
         label: 'B · Push',
         items: [
-          { slug: 'push-up', start_level: 4, target_sets: 4, rest_seconds: 90, notes: 'główne push' },
-          { slug: 'dip', start_level: 3, target_sets: 3, rest_seconds: 90 },
-          { slug: 'pull-up', start_level: 2, target_sets: 3, rest_seconds: 60, notes: 'scapular - aktywacja' },
-          { slug: 'plank', start_level: 2, target_sets: 3, rest_seconds: 60 },
-          { slug: 'bike', start_level: 2, target_sets: 1, rest_seconds: 0 }
+          { slug: 'push-up', start_level: 1, target_sets: 4, rest_seconds: 90, notes: 'główne push' },
+          { slug: 'dip', start_level: 1, target_sets: 3, rest_seconds: 90 },
+          { slug: 'pull-up', start_level: 1, target_sets: 3, rest_seconds: 60, notes: 'scapular - aktywacja' },
+          { slug: 'plank', start_level: 1, target_sets: 3, rest_seconds: 60 },
+          { slug: 'bike', start_level: 1, target_sets: 1, rest_seconds: 0 }
         ]
       },
       {
         label: 'C · Legs + Core',
         items: [
-          { slug: 'bulgarian-split-squat', start_level: 2, target_sets: 4, rest_seconds: 90, notes: 'główne nogi' },
-          { slug: 'glute-bridge', start_level: 3, target_sets: 3, rest_seconds: 60 },
-          { slug: 'plank', start_level: 2, target_sets: 3, rest_seconds: 60 },
+          { slug: 'bulgarian-split-squat', start_level: 1, target_sets: 4, rest_seconds: 90, notes: 'główne nogi' },
+          { slug: 'glute-bridge', start_level: 1, target_sets: 3, rest_seconds: 60 },
+          { slug: 'plank', start_level: 1, target_sets: 3, rest_seconds: 60 },
           { slug: 'hanging-knee-raise', start_level: 1, target_sets: 3, rest_seconds: 60 },
           { slug: 'air-walker', start_level: 1, target_sets: 1, rest_seconds: 0, notes: 'cooldown' }
         ]
@@ -70,30 +70,30 @@ const PLANS: StarterPlan[] = [
         label: 'A · Lower-heavy',
         items: [
           { slug: 'bulgarian-split-squat', start_level: 1, target_sets: 4, rest_seconds: 75, notes: 'główne nogi' },
-          { slug: 'glute-bridge', start_level: 2, target_sets: 4, rest_seconds: 60, notes: 'pośladki - izolacja' },
-          { slug: 'push-up', start_level: 3, target_sets: 3, rest_seconds: 60 },
-          { slug: 'plank', start_level: 2, target_sets: 3, rest_seconds: 45 },
-          { slug: 'bike', start_level: 4, target_sets: 1, rest_seconds: 0, notes: 'interwały finisher' }
+          { slug: 'glute-bridge', start_level: 1, target_sets: 4, rest_seconds: 60, notes: 'pośladki - izolacja' },
+          { slug: 'push-up', start_level: 1, target_sets: 3, rest_seconds: 60 },
+          { slug: 'plank', start_level: 1, target_sets: 3, rest_seconds: 45 },
+          { slug: 'bike', start_level: 1, target_sets: 1, rest_seconds: 0, notes: 'interwały finisher' }
         ]
       },
       {
         label: 'B · Upper + Cardio',
         items: [
-          { slug: 'push-up', start_level: 3, target_sets: 3, rest_seconds: 60 },
+          { slug: 'push-up', start_level: 1, target_sets: 3, rest_seconds: 60 },
           { slug: 'ring-row', start_level: 1, target_sets: 3, rest_seconds: 60 },
           { slug: 'dip', start_level: 1, target_sets: 3, rest_seconds: 60, notes: 'bench dip - triceps' },
           { slug: 'plank', start_level: 1, target_sets: 3, rest_seconds: 45 },
-          { slug: 'bike', start_level: 2, target_sets: 1, rest_seconds: 0, notes: 'steady-state główne cardio' }
+          { slug: 'bike', start_level: 1, target_sets: 1, rest_seconds: 0, notes: 'steady-state główne cardio' }
         ]
       },
       {
         label: 'C · Lower + Core',
         items: [
-          { slug: 'bulgarian-split-squat', start_level: 2, target_sets: 3, rest_seconds: 60 },
-          { slug: 'glute-bridge', start_level: 3, target_sets: 4, rest_seconds: 60, notes: 'single-leg' },
+          { slug: 'bulgarian-split-squat', start_level: 1, target_sets: 3, rest_seconds: 60 },
+          { slug: 'glute-bridge', start_level: 1, target_sets: 4, rest_seconds: 60, notes: 'single-leg' },
           { slug: 'hanging-knee-raise', start_level: 1, target_sets: 3, rest_seconds: 45 },
-          { slug: 'plank', start_level: 2, target_sets: 3, rest_seconds: 45 },
-          { slug: 'bike', start_level: 5, target_sets: 1, rest_seconds: 0, notes: 'tabata finisher' }
+          { slug: 'plank', start_level: 1, target_sets: 3, rest_seconds: 45 },
+          { slug: 'bike', start_level: 1, target_sets: 1, rest_seconds: 0, notes: 'tabata finisher' }
         ]
       }
     ]

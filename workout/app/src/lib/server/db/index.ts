@@ -33,9 +33,26 @@ export function getDb(): Database.Database {
   syncUserNames(db);
   seedPlans(db);
   ensureTechniques(db);
+  migrateStartLevelsToOne(db);
 
   dbInstance = db;
   return db;
+}
+
+function migrateStartLevelsToOne(db: Database.Database) {
+  // Plan_exercises.start_level miał historycznie wpisane różne wartości (np. L4 dla M
+  // bo "trochę umie"). Mieszało to "rekomendację autora planu" z "stanem konkretnego
+  // usera". Aktualnie user_exercise_level jest źródłem prawdy - plan zawsze startuje
+  // od podstaw, a auto-promocja / ręczny override podbijają poziom.
+  const done = db
+    .prepare('SELECT value FROM meta WHERE key = ?')
+    .get('migration_v1_start_levels_reset') as { value: string } | undefined;
+  if (done) return;
+  db.prepare('UPDATE plan_exercises SET start_level = 1').run();
+  db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)').run(
+    'migration_v1_start_levels_reset',
+    '1'
+  );
 }
 
 function syncUserNames(db: Database.Database) {

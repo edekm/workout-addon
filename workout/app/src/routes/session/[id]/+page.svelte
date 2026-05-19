@@ -45,6 +45,7 @@
     promoted?: boolean;
     level_source?: 'auto' | 'manual' | 'plan';
     all_progressions?: ProgressionFull[];
+    last_sets?: Array<{ set_number: number; reps: number | null; duration_s: number | null }>;
     sets: SetItem[];
   };
 
@@ -671,6 +672,19 @@
           · cel {mode === 'duration' ? `${target}s` : target}
         {/if}
       </p>
+
+      {#if currentEx.last_sets && currentEx.last_sets.length > 0}
+        <p class="mt-1 text-xs text-neutral-400">
+          Ostatnio:
+          {#each currentEx.last_sets as ls, i}
+            <span class="font-mono">
+              {ls.reps ?? `${ls.duration_s}s`}{i < (currentEx.last_sets?.length ?? 0) - 1 ? ', ' : ''}
+            </span>
+          {/each}
+        </p>
+      {:else}
+        <p class="mt-1 text-xs text-neutral-400">Ostatnio: —</p>
+      {/if}
 
       {#if phase === 'log'}
         <!-- Faza logowania serii -->

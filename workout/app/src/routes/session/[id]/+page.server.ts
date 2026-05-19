@@ -98,6 +98,26 @@ export const load: ServerLoad = ({ params }) => {
        FROM progressions WHERE exercise_id = ? ORDER BY level`
     );
 
+    // Ostatnia ZAKOŃCZONA sesja (różna od bieżącej) z tymi setami dla danego user'a,
+    // ćwiczenia i levelu. Pokazujemy obok celu jako referencję do double progression.
+    const getLastSetsForExerciseLevel = db.prepare(
+      `SELECT st.set_number, st.reps, st.duration_s
+       FROM sets st
+       WHERE st.session_id = (
+         SELECT s.id FROM sessions s
+         JOIN sets st2 ON st2.session_id = s.id
+         WHERE s.user_id = ?
+           AND s.completed_at IS NOT NULL
+           AND s.id != ?
+           AND st2.exercise_id = ?
+           AND st2.level = ?
+         ORDER BY s.completed_at DESC
+         LIMIT 1
+       )
+       AND st.exercise_id = ?
+       ORDER BY st.set_number`
+    );
+
     // Auto-promocję wykonujemy tylko gdy sesja jest jeszcze aktywna
     // (zakończona sesja powinna pokazywać historyczne dane bez modyfikacji)
     const isActive = session.completed_at == null;
@@ -109,12 +129,20 @@ export const load: ServerLoad = ({ params }) => {
       const progression =
         (getProgression.get(pe.exercise_id, eff.level) as ProgressionRow) ?? null;
       const allLevels = getAllProgressions.all(pe.exercise_id) as ProgressionRow[];
+      const lastSets = getLastSetsForExerciseLevel.all(
+        session.user_id,
+        sessionId,
+        pe.exercise_id,
+        eff.level,
+        pe.exercise_id
+      ) as Array<{ set_number: number; reps: number | null; duration_s: number | null }>;
       return {
         ...pe,
         progression,
         promoted: eff.promoted,
         level_source: eff.source,
         all_progressions: allLevels,
+        last_sets: lastSets,
         sets: getSets.all(sessionId, pe.exercise_id) as SetRow[]
       };
     });
