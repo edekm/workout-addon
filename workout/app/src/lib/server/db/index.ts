@@ -19,16 +19,10 @@ export function getDb(): Database.Database {
 
   db.exec(SCHEMA_SQL);
 
-  const seeded = db.prepare('SELECT value FROM meta WHERE key = ?').get('seeded') as
-    | { value: string }
-    | undefined;
-  if (!seeded) {
-    seed(db);
-    db.prepare('INSERT INTO meta (key, value) VALUES (?, ?)').run(
-      'seeded',
-      new Date().toISOString()
-    );
-  }
+  // seed jest idempotentny - INSERT OR IGNORE per progresja, exercise dodaje
+  // się tylko gdy nie ma slugu. Dzięki temu nowe ćwiczenia dodane w późniejszych
+  // wersjach dolatują do istniejących baz.
+  seed(db);
 
   syncUserNames(db);
   seedPlans(db);
