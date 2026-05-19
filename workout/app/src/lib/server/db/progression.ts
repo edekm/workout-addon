@@ -104,3 +104,107 @@ export function resolveLevel(
 
   return { level: nextLevel, promoted: true };
 }
+
+/**
+ * Przelicza level usera od zera na podstawie pełnej historii completed sesji.
+ * Używane po usunięciu sesji - bez tego user utknie na auto-awansowanym levelu
+ * mimo że sesje które uzasadniały awans już nie istnieją.
+ *
+ * Algorytm:
+ * - zaczyna od planStartLevel (typowo 1)
+ * - iteruje chronologicznie ASC po completed sesjach z tym ćwiczeniem
+ * - dla każdej sesji: jeśli wszystkie serie na bieżącym levelu wbiły max → counter+1
+ * - po 2 consecutive hits → awans, counter=0
+ * - sesja bez serii tego ćwiczenia na bieżącym levelu jest pomijana (counter zostaje)
+ * - sesja z fail (jakaś seria pod max) → counter=0
+ */
+export function rebuildLevel(
+  db: Database.Database,
+  userId: number,
+  exerciseId: number,
+  planStartLevel: number
+): number {
+  const progs = db
+    .prepare(
+      `SELECT level, target_reps_max, target_duration_s
+       FROM progressions WHERE exercise_id = ? ORDER BY level ASC`
+    )
+    .all(exerciseId) as Array<{
+    level: number;
+    target_reps_max: number | null;
+    target_duration_s: number | null;
+  }>;
+
+  if (progs.length === 0) {
+    db.prepare(
+      'DELETE FROM user_exercise_level WHERE user_id = ? AND exercise_id = ?'
+    ).run(userId, exerciseId);
+    return planStartLevel;
+  }
+
+  let idx = progs.findIndex((p) => p.level === planStartLevel);
+  if (idx < 0) idx = 0;
+
+  const getSetsForSessionLevel = db.prepare(
+    `SELECT reps, duration_s FROM sets
+     WHERE session_id = ? AND exercise_id = ? AND level = ?`
+  );
+
+  const sessions = db
+    .prepare(
+      `SELECT DISTINCT s.id, s.completed_at FROM sessions s
+       JOIN sets st ON st.session_id = s.id
+       WHERE s.user_id = ?
+         AND s.completed_at IS NOT NULL
+         AND st.exercise_id = ?
+       ORDER BY s.completed_at ASC`
+    )
+    .all(userId, exerciseId) as Array<{ id: number; completed_at: number }>;
+
+  let consecutiveHits = 0;
+
+  for (const sess of sessions) {
+    const cur = progs[idx];
+    const sets = getSetsForSessionLevel.all(sess.id, exerciseId, cur.level) as Array<{
+      reps: number | null;
+      duration_s: number | null;
+    }>;
+    if (sets.length === 0) continue;
+
+    const allHit = sets.every(
+      (s) =>
+        (s.reps != null && cur.target_reps_max != null && s.reps >= cur.target_reps_max) ||
+        (s.duration_s != null &&
+          cur.target_duration_s != null &&
+          s.duration_s >= cur.target_duration_s)
+    );
+
+    if (allHit) {
+      consecutiveHits += 1;
+      if (consecutiveHits >= 2 && idx < progs.length - 1) {
+        idx += 1;
+        consecutiveHits = 0;
+      }
+    } else {
+      consecutiveHits = 0;
+    }
+  }
+
+  const finalLevel = progs[idx].level;
+
+  if (finalLevel === planStartLevel) {
+    db.prepare(
+      'DELETE FROM user_exercise_level WHERE user_id = ? AND exercise_id = ?'
+    ).run(userId, exerciseId);
+  } else {
+    db.prepare(
+      `INSERT INTO user_exercise_level (user_id, exercise_id, level, updated_at)
+       VALUES (?, ?, ?, unixepoch())
+       ON CONFLICT(user_id, exercise_id) DO UPDATE SET
+         level = excluded.level,
+         updated_at = excluded.updated_at`
+    ).run(userId, exerciseId, finalLevel);
+  }
+
+  return finalLevel;
+}

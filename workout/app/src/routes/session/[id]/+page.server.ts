@@ -1,7 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, ServerLoad } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
-import { resolveLevel } from '$lib/server/db/progression';
+import { resolveLevel, rebuildLevel } from '$lib/server/db/progression';
 
 type SessionRow = {
   id: number;
@@ -226,8 +226,18 @@ export const actions: Actions = {
       .get(sessionId) as { user_id: number } | undefined;
     if (!session) throw error(404, 'Sesja nie istnieje');
 
+    // Zbieramy ćwiczenia z usuwanej sesji - po DELETE trzeba przeliczyć ich level,
+    // żeby auto-awansy które się oparły na tej sesji się cofnęły.
+    const affectedExercises = db
+      .prepare('SELECT DISTINCT exercise_id FROM sets WHERE session_id = ?')
+      .all(sessionId) as Array<{ exercise_id: number }>;
+
     // CASCADE w schema usuwa sety automatycznie
     db.prepare('DELETE FROM sessions WHERE id = ?').run(sessionId);
+
+    for (const { exercise_id } of affectedExercises) {
+      rebuildLevel(db, session.user_id, exercise_id, 1);
+    }
 
     const user = db.prepare('SELECT slot FROM users WHERE id = ?').get(session.user_id) as
       | { slot: string }
