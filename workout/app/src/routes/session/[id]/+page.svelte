@@ -716,7 +716,7 @@
             {/if}
           </div>
           {#if restRemaining > 0}
-            <p class="text-xs text-neutral-500">cel {restTarget}s</p>
+            <p class="text-xs text-neutral-500">z {restTarget}s przerwy</p>
           {:else}
             <p class="text-xs font-medium text-emerald-700">gotowe</p>
           {/if}
