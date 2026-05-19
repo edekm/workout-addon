@@ -26,6 +26,7 @@
       equipment_ref: string;
       progression: Progression;
     }>;
+    activeSession: { id: number } | null;
   };
 
   function target(p: Progression): string {
@@ -94,7 +95,12 @@
     {/each}
   </ul>
 
-  <div class="mt-6 rounded-xl bg-neutral-100 p-4 text-center text-sm text-neutral-500">
-    Logowanie serii — wkrótce (Etap 2c).
-  </div>
+  <form method="POST" action="?/startSession" class="mt-6">
+    <button
+      type="submit"
+      class="w-full rounded-2xl bg-neutral-900 px-6 py-4 text-base font-semibold text-white shadow-sm transition hover:bg-neutral-800 active:scale-[0.99]"
+    >
+      {data.activeSession ? 'Wznów sesję' : 'Rozpocznij sesję'}
+    </button>
+  </form>
 </main>

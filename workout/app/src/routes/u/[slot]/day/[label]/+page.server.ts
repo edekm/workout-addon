@@ -1,5 +1,5 @@
-import { error } from '@sveltejs/kit';
-import type { ServerLoad } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
+import type { Actions, ServerLoad } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
 
 type ProgressionRow = {
@@ -80,5 +80,57 @@ export const load: ServerLoad = ({ params }) => {
     return { ...ex, progression: prog ?? null };
   });
 
-  return { user, plan, dayLabel, items };
+  const activeSession = db
+    .prepare(
+      `SELECT id FROM sessions
+       WHERE user_id = ? AND day_label = ? AND completed_at IS NULL
+       ORDER BY started_at DESC LIMIT 1`
+    )
+    .get(user.id, dayLabel) as { id: number } | undefined;
+
+  return { user, plan, dayLabel, items, activeSession: activeSession ?? null };
+};
+
+export const actions: Actions = {
+  startSession: async ({ params }) => {
+    const db = getDb();
+    const slot = params.slot;
+    const dayLabel = decodeURIComponent(params.label ?? '');
+    if (slot !== 'user1' && slot !== 'user2') throw error(400, 'Bad slot');
+
+    const user = db.prepare('SELECT id FROM users WHERE slot = ?').get(slot) as
+      | { id: number }
+      | undefined;
+    if (!user) throw error(404, 'Brak usera');
+
+    const plan = db
+      .prepare(
+        `SELECT id FROM plans WHERE user_id = ? AND is_active = 1
+         ORDER BY id DESC LIMIT 1`
+      )
+      .get(user.id) as { id: number } | undefined;
+
+    const existing = db
+      .prepare(
+        `SELECT id FROM sessions
+         WHERE user_id = ? AND day_label = ? AND completed_at IS NULL
+         ORDER BY started_at DESC LIMIT 1`
+      )
+      .get(user.id, dayLabel) as { id: number } | undefined;
+
+    let sessionId: number;
+    if (existing) {
+      sessionId = existing.id;
+    } else {
+      const info = db
+        .prepare(
+          `INSERT INTO sessions (user_id, plan_id, day_label)
+           VALUES (?, ?, ?)`
+        )
+        .run(user.id, plan?.id ?? null, dayLabel);
+      sessionId = Number(info.lastInsertRowid);
+    }
+
+    throw redirect(303, `/session/${sessionId}`);
+  }
 };

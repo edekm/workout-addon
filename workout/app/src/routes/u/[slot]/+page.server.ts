@@ -33,18 +33,28 @@ export const load: ServerLoad = ({ params }) => {
       .all(plan.id) as Array<{ label: string; exercise_count: number }>;
   }
 
+  const activeSession = db
+    .prepare(
+      `SELECT id, day_label, started_at
+       FROM sessions WHERE user_id = ? AND completed_at IS NULL
+       ORDER BY started_at DESC LIMIT 1`
+    )
+    .get(user.id) as { id: number; day_label: string | null; started_at: number } | undefined;
+
   const recentSessions = db
     .prepare(
-      `SELECT id, day_label, started_at, completed_at
-       FROM sessions WHERE user_id = ?
-       ORDER BY started_at DESC LIMIT 5`
+      `SELECT s.id, s.day_label, s.started_at, s.completed_at,
+              (SELECT COUNT(*) FROM sets WHERE session_id = s.id) AS set_count
+       FROM sessions s WHERE s.user_id = ? AND s.completed_at IS NOT NULL
+       ORDER BY s.started_at DESC LIMIT 5`
     )
     .all(user.id) as Array<{
     id: number;
     day_label: string | null;
     started_at: number;
     completed_at: number | null;
+    set_count: number;
   }>;
 
-  return { user, plan, days, recentSessions };
+  return { user, plan, days, activeSession: activeSession ?? null, recentSessions };
 };
