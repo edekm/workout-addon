@@ -159,7 +159,7 @@ export const actions: Actions = {
     return { success: true };
   },
 
-  complete: async ({ params }) => {
+  complete: async ({ params, locals }) => {
     const sessionId = parseId(params.id);
     const db = getDb();
     const session = db
@@ -174,10 +174,10 @@ export const actions: Actions = {
     const user = db.prepare('SELECT slot FROM users WHERE id = ?').get(session.user_id) as
       | { slot: string }
       | undefined;
-    throw redirect(303, user ? `/u/${user.slot}` : '/');
+    throw redirect(303, `${locals.ingressPath}${user ? `/u/${user.slot}` : '/'}`);
   },
 
-  cancel: async ({ params }) => {
+  cancel: async ({ params, locals }) => {
     const sessionId = parseId(params.id);
     const db = getDb();
     const session = db
@@ -196,6 +196,6 @@ export const actions: Actions = {
     const user = db.prepare('SELECT slot FROM users WHERE id = ?').get(session.user_id) as
       | { slot: string }
       | undefined;
-    throw redirect(303, user ? `/u/${user.slot}` : '/');
+    throw redirect(303, `${locals.ingressPath}${user ? `/u/${user.slot}` : '/'}`);
   }
 };

@@ -83,7 +83,7 @@
 
 <main class="mx-auto max-w-md p-4 pb-32">
   <header class="flex items-center gap-3 pt-2 pb-4">
-    <a href="/u/{data.user?.slot ?? ''}" class="text-neutral-500 hover:text-neutral-900">←</a>
+    <a href="../u/{data.user?.slot ?? ''}" class="text-neutral-500 hover:text-neutral-900">←</a>
     <div class="flex-1">
       <h1 class="text-lg font-bold text-neutral-900">{data.session.day_label ?? 'Sesja'}</h1>
       <p class="text-xs text-neutral-500">

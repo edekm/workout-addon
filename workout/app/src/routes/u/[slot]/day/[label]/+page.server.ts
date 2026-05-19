@@ -92,7 +92,7 @@ export const load: ServerLoad = ({ params }) => {
 };
 
 export const actions: Actions = {
-  startSession: async ({ params }) => {
+  startSession: async ({ params, locals }) => {
     const db = getDb();
     const slot = params.slot;
     const dayLabel = decodeURIComponent(params.label ?? '');
@@ -131,6 +131,6 @@ export const actions: Actions = {
       sessionId = Number(info.lastInsertRowid);
     }
 
-    throw redirect(303, `/session/${sessionId}`);
+    throw redirect(303, `${locals.ingressPath}/session/${sessionId}`);
   }
 };

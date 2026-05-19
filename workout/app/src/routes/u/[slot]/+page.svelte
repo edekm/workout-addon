@@ -27,7 +27,7 @@
 
   {#if data.activeSession}
     <a
-      href="/session/{data.activeSession.id}"
+      href="../session/{data.activeSession.id}"
       class="mb-6 block rounded-2xl bg-amber-100 p-4 shadow-sm ring-2 ring-amber-300 transition hover:bg-amber-50"
     >
       <p class="text-xs uppercase tracking-wider text-amber-700">Sesja w toku</p>
