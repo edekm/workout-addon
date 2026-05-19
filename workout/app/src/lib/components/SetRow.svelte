@@ -19,52 +19,74 @@
       ? String(existing.reps ?? '')
       : String(existing.duration_s ?? '')
     : '';
+  let lastSavedValue: string = value;
   let saving = false;
   let savedFlash = false;
+  let formEl: HTMLFormElement;
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Konkretny cel = górna granica zakresu (gdy ją osiągasz na wszystkich seriach → level up)
+  $: target = mode === 'duration' ? targetMin ?? targetMax : targetMax ?? targetMin;
 
   function flashSaved() {
     savedFlash = true;
     setTimeout(() => (savedFlash = false), 1200);
   }
 
-  function classifyValue(v: string): 'empty' | 'below' | 'ok' | 'above' {
+  function classifyValue(v: string): 'empty' | 'below' | 'hit' {
     if (!v) return 'empty';
     const n = Number(v);
     if (!Number.isFinite(n)) return 'empty';
-    if (targetMin != null && n < targetMin) return 'below';
-    if (targetMax != null && n > targetMax) return 'above';
-    return 'ok';
+    if (target != null && n < target) return 'below';
+    return 'hit';
   }
 
   $: tone = classifyValue(value);
   $: inputClass =
-    tone === 'ok'
+    tone === 'hit'
       ? 'border-emerald-300 bg-emerald-50'
       : tone === 'below'
         ? 'border-amber-300 bg-amber-50'
-        : tone === 'above'
-          ? 'border-blue-300 bg-blue-50'
-          : 'border-neutral-200';
+        : 'border-neutral-200';
 
   function targetLabel(): string {
-    if (mode === 'duration') {
-      if (targetMin === targetMax && targetMin != null) return `cel ${targetMin}s`;
-      if (targetMin != null && targetMax != null) return `cel ${targetMin}-${targetMax}s`;
-      return '';
+    if (target == null) return '';
+    return mode === 'duration' ? `/ ${target}s` : `/ ${target}`;
+  }
+
+  function onInput() {
+    if (readonly) return;
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      if (value === lastSavedValue) return;
+      if (!value) return; // nie zapisujemy pustego
+      formEl?.requestSubmit();
+    }, 600);
+  }
+
+  function onBlur() {
+    if (readonly) return;
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+      debounceTimer = null;
     }
-    if (targetMin != null && targetMax != null) return `cel ${targetMin}-${targetMax}`;
-    return '';
+    if (value === lastSavedValue) return;
+    if (!value) return;
+    formEl?.requestSubmit();
   }
 </script>
 
 <form
+  bind:this={formEl}
   method="POST"
   action="?/logSet"
   use:enhance={() => {
     saving = true;
+    const submitted = value;
     return async ({ update }) => {
       await update({ reset: false });
       saving = false;
+      lastSavedValue = submitted;
       flashSaved();
     };
   }}
@@ -80,6 +102,8 @@
     type="number"
     name={mode === 'reps' ? 'reps' : 'duration_s'}
     bind:value
+    on:input={onInput}
+    on:blur={onBlur}
     inputmode="numeric"
     min="0"
     max="9999"
@@ -88,18 +112,11 @@
     class="w-20 rounded-lg border px-2 py-2 text-center text-base focus:border-neutral-900 focus:outline-none disabled:opacity-60 {inputClass}"
   />
 
-  <span class="text-xs text-neutral-400">{targetLabel()}</span>
+  <span class="text-sm text-neutral-400">{targetLabel()}</span>
 
   {#if !readonly}
-    <button
-      type="submit"
-      disabled={saving || !value}
-      class="ml-auto rounded-lg bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:bg-neutral-300"
-    >
-      {#if saving}…{:else if existing}↻{:else}+{/if}
-    </button>
-    {#if savedFlash}
-      <span class="text-xs text-emerald-600">✓</span>
-    {/if}
+    <span class="ml-auto text-xs text-neutral-400">
+      {#if saving}…{:else if savedFlash}<span class="text-emerald-600">✓ zapisano</span>{:else if existing && value === lastSavedValue}zapisano{/if}
+    </span>
   {/if}
 </form>
