@@ -22,7 +22,10 @@ export const TECHNIQUES: Record<string, string> = {
 };
 
 export function ensureTechniques(db: Database.Database) {
-  const stmt = db.prepare('UPDATE exercises SET technique_md = ? WHERE slug = ? AND (technique_md IS NULL OR technique_md = "")');
+  const stmt = db.prepare(
+    `UPDATE exercises SET technique_md = ?
+     WHERE slug = ? AND (technique_md IS NULL OR technique_md = '')`
+  );
   const tx = db.transaction(() => {
     for (const [slug, text] of Object.entries(TECHNIQUES)) {
       stmt.run(text, slug);
