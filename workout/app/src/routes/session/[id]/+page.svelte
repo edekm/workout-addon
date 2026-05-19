@@ -66,10 +66,12 @@
   let restInterval: ReturnType<typeof setInterval> | null = null;
   let restSignaled = false;
 
-  let exerciseElapsed = 0;
-  let exerciseRunning = false;
+  // Timer ćwiczenia: idle → pre (odliczanie 5s) → running (odliczanie targetu) → done
+  const PRE_SECONDS = 5;
+  let timerPhase: 'idle' | 'pre' | 'running' | 'paused' | 'done' = 'idle';
+  let preRemaining = PRE_SECONDS;
+  let mainRemaining = 0;
   let exerciseInterval: ReturnType<typeof setInterval> | null = null;
-  let exerciseSignaled = false;
 
   let audioCtx: AudioContext | null = null;
 
@@ -97,14 +99,31 @@
   }
 
   function syncInputFromExisting() {
-    if (existingSet) {
-      inputValue = mode === 'reps' ? String(existingSet.reps ?? '') : String(existingSet.duration_s ?? '');
-      if (mode === 'duration') {
-        exerciseElapsed = existingSet.duration_s ?? 0;
-      }
+    // Czytamy bezpośrednio z data, nie z reactive $: (które jeszcze nie przeliczyło)
+    const ex = data.exercises[exIdx];
+    if (!ex) return;
+    const exMode = ex.progression?.target_duration_s != null ? 'duration' : 'reps';
+    const exTarget =
+      exMode === 'duration'
+        ? ex.progression?.target_duration_s ?? 0
+        : ex.progression?.target_reps_max ?? ex.progression?.target_reps_min ?? 0;
+    const existing = ex.sets.find((s) => s.set_number === setNum) ?? null;
+
+    if (existing) {
+      inputValue = exMode === 'reps' ? String(existing.reps ?? '') : String(existing.duration_s ?? '');
     } else {
       inputValue = '';
-      if (mode === 'duration') exerciseElapsed = 0;
+    }
+    stopExerciseInterval();
+    timerPhase = 'idle';
+    preRemaining = PRE_SECONDS;
+    mainRemaining = exTarget;
+  }
+
+  function stopExerciseInterval() {
+    if (exerciseInterval) {
+      clearInterval(exerciseInterval);
+      exerciseInterval = null;
     }
   }
 
@@ -179,38 +198,64 @@
   }
 
   // ------- Timer ćwiczenia (duration) -------
-  function toggleExerciseTimer() {
+  function startExerciseTimer() {
     ensureAudio();
-    if (exerciseRunning) {
-      // stop
-      exerciseRunning = false;
-      if (exerciseInterval) {
-        clearInterval(exerciseInterval);
-        exerciseInterval = null;
+    if (timerPhase === 'paused') {
+      // wznawiamy od mainRemaining
+      timerPhase = 'running';
+      tickExerciseMain();
+      return;
+    }
+    // idle → pre
+    timerPhase = 'pre';
+    preRemaining = PRE_SECONDS;
+    mainRemaining = target ?? 0;
+    inputValue = '';
+    tickExercisePre();
+  }
+
+  function tickExercisePre() {
+    stopExerciseInterval();
+    exerciseInterval = setInterval(() => {
+      preRemaining -= 1;
+      if (preRemaining <= 3 && preRemaining > 0) beep(660, 100);
+      if (preRemaining <= 0) {
+        stopExerciseInterval();
+        beep(1100, 250);
+        timerPhase = 'running';
+        tickExerciseMain();
       }
-      inputValue = String(exerciseElapsed);
-    } else {
-      // start
-      exerciseRunning = true;
-      exerciseSignaled = false;
-      exerciseInterval = setInterval(() => {
-        exerciseElapsed += 1;
-        if (!exerciseSignaled && target != null && exerciseElapsed >= target) {
-          exerciseSignaled = true;
-          signal();
-        }
-      }, 1000);
+    }, 1000);
+  }
+
+  function tickExerciseMain() {
+    stopExerciseInterval();
+    exerciseInterval = setInterval(() => {
+      mainRemaining -= 1;
+      if (mainRemaining <= 0) {
+        stopExerciseInterval();
+        signal();
+        timerPhase = 'done';
+        if (target != null) inputValue = String(target);
+      }
+    }, 1000);
+  }
+
+  function pauseExerciseTimer() {
+    if (timerPhase !== 'running') return;
+    stopExerciseInterval();
+    timerPhase = 'paused';
+    if (target != null) {
+      const elapsed = target - mainRemaining;
+      inputValue = String(Math.max(0, elapsed));
     }
   }
 
   function resetExerciseTimer() {
-    exerciseRunning = false;
-    if (exerciseInterval) {
-      clearInterval(exerciseInterval);
-      exerciseInterval = null;
-    }
-    exerciseElapsed = 0;
-    exerciseSignaled = false;
+    stopExerciseInterval();
+    timerPhase = 'idle';
+    preRemaining = PRE_SECONDS;
+    mainRemaining = target ?? 0;
     inputValue = '';
   }
 
@@ -259,13 +304,10 @@
 
   function goToNextSet() {
     stopRest();
-    exerciseElapsed = 0;
-    exerciseSignaled = false;
-    exerciseRunning = false;
-    if (exerciseInterval) {
-      clearInterval(exerciseInterval);
-      exerciseInterval = null;
-    }
+    stopExerciseInterval();
+    timerPhase = 'idle';
+    preRemaining = PRE_SECONDS;
+    mainRemaining = 0;
     if (isLastSetOfExercise) {
       // następne ćwiczenie
       if (!isLastExercise) {
@@ -475,21 +517,50 @@
 
           {#if mode === 'duration'}
             <div class="flex flex-col items-center gap-3">
-              <div class="text-5xl font-mono font-bold tabular-nums {exerciseSignaled ? 'text-emerald-600' : 'text-neutral-900'}">
-                {fmtTime(exerciseElapsed)}
-              </div>
-              {#if target != null}
-                <p class="text-xs text-neutral-500">cel {fmtTime(target)}</p>
+              {#if timerPhase === 'pre'}
+                <p class="text-xs uppercase tracking-wider text-amber-600">Przygotuj się</p>
+                <div class="text-6xl font-mono font-bold tabular-nums text-amber-600">
+                  {preRemaining}
+                </div>
+              {:else if timerPhase === 'done'}
+                <p class="text-xs uppercase tracking-wider text-emerald-600">Gotowe</p>
+                <div class="text-5xl font-mono font-bold tabular-nums text-emerald-600">
+                  {fmtTime(target ?? 0)}
+                </div>
+              {:else}
+                {#if target != null}
+                  <p class="text-xs text-neutral-500">cel {fmtTime(target)}</p>
+                {/if}
+                <div class="text-5xl font-mono font-bold tabular-nums {timerPhase === 'running' ? 'text-neutral-900' : 'text-neutral-500'}">
+                  {fmtTime(timerPhase === 'idle' ? (target ?? 0) : mainRemaining)}
+                </div>
               {/if}
+
               <div class="flex gap-2">
-                <button
-                  type="button"
-                  on:click={toggleExerciseTimer}
-                  class="rounded-xl px-5 py-3 text-base font-semibold text-white {exerciseRunning ? 'bg-amber-600' : 'bg-emerald-600'}"
-                >
-                  {exerciseRunning ? 'Pauza' : exerciseElapsed > 0 ? 'Wznów' : 'Start'}
-                </button>
-                {#if exerciseElapsed > 0 && !exerciseRunning}
+                {#if timerPhase === 'running'}
+                  <button
+                    type="button"
+                    on:click={pauseExerciseTimer}
+                    class="rounded-xl bg-amber-600 px-5 py-3 text-base font-semibold text-white"
+                  >
+                    Pauza
+                  </button>
+                {:else if timerPhase === 'pre'}
+                  <button
+                    type="button"
+                    on:click={resetExerciseTimer}
+                    class="rounded-xl border border-neutral-200 px-5 py-3 text-base text-neutral-500"
+                  >
+                    Anuluj
+                  </button>
+                {:else if timerPhase === 'paused'}
+                  <button
+                    type="button"
+                    on:click={startExerciseTimer}
+                    class="rounded-xl bg-emerald-600 px-5 py-3 text-base font-semibold text-white"
+                  >
+                    Wznów
+                  </button>
                   <button
                     type="button"
                     on:click={resetExerciseTimer}
@@ -497,17 +568,36 @@
                   >
                     Reset
                   </button>
+                {:else if timerPhase === 'done'}
+                  <button
+                    type="button"
+                    on:click={resetExerciseTimer}
+                    class="rounded-xl border border-neutral-200 px-3 py-3 text-sm text-neutral-500"
+                  >
+                    Reset
+                  </button>
+                {:else}
+                  <button
+                    type="button"
+                    on:click={startExerciseTimer}
+                    class="rounded-xl bg-emerald-600 px-5 py-3 text-base font-semibold text-white"
+                  >
+                    Start
+                  </button>
                 {/if}
               </div>
+
               <input type="hidden" name="duration_s" bind:value={inputValue} />
-              <p class="text-xs text-neutral-400">Lub wpisz ręcznie:</p>
-              <input
-                type="number"
-                inputmode="numeric"
-                bind:value={inputValue}
-                placeholder="sek."
-                class="w-24 rounded-lg border px-2 py-2 text-center text-base focus:border-neutral-900 focus:outline-none {inputClass}"
-              />
+              {#if timerPhase === 'idle' || timerPhase === 'paused' || timerPhase === 'done'}
+                <p class="mt-1 text-xs text-neutral-400">Lub wpisz ręcznie:</p>
+                <input
+                  type="number"
+                  inputmode="numeric"
+                  bind:value={inputValue}
+                  placeholder="sek."
+                  class="w-24 rounded-lg border px-2 py-2 text-center text-base focus:border-neutral-900 focus:outline-none {inputClass}"
+                />
+              {/if}
             </div>
           {:else}
             <div class="flex flex-col items-center gap-3">
@@ -580,7 +670,7 @@
         <button
           type="button"
           on:click={submitNext}
-          disabled={saving || (mode === 'duration' && exerciseRunning)}
+          disabled={saving || (mode === 'duration' && (timerPhase === 'pre' || timerPhase === 'running'))}
           class="flex-1 rounded-xl bg-neutral-900 px-4 py-3 text-base font-semibold text-white disabled:bg-neutral-400"
         >
           {saving ? 'Zapis…' : 'Dalej'}
