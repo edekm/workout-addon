@@ -31,7 +31,8 @@ CLAUDE.md
 inventory.md
 exercises.md
 progression-rules.md
-plans/
+# UWAGA: prefiks `/` żeby łapać TYLKO top-level plans/ (notatki), nie src/routes/plans/.
+/plans/
 
 # Plan/notes folder (lokalnie - dla narzędzi typu Claude plan mode)
 .plans/
