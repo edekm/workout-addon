@@ -4,13 +4,9 @@
     CATEGORIES,
     LOCATION_LABELS,
     CATEGORY_LABELS
-  } from '$lib/server/db/library';
-  import type {
-    Location,
-    Category,
-    ExerciseInput,
-    ProgressionInput
-  } from '$lib/server/db/library';
+  } from '$lib/workout-constants';
+  import type { Location, Category } from '$lib/workout-constants';
+  import type { ExerciseInput, ProgressionInput } from '$lib/server/db/library';
 
   export let initial: ExerciseInput;
   export let actionUrl: string;

@@ -1,34 +1,15 @@
 import type Database from 'better-sqlite3';
+import {
+  LOCATIONS,
+  CATEGORIES,
+  LOCATION_LABELS,
+  CATEGORY_LABELS,
+  type Location,
+  type Category
+} from '$lib/workout-constants';
 
-export const LOCATIONS = ['gym1', 'gym2', 'home'] as const;
-export type Location = (typeof LOCATIONS)[number];
-
-export const CATEGORIES = [
-  'pull',
-  'push',
-  'legs',
-  'core',
-  'cardio',
-  'mobility',
-  'skill'
-] as const;
-export type Category = (typeof CATEGORIES)[number];
-
-export const LOCATION_LABELS: Record<Location, string> = {
-  gym1: 'Siłownia 1',
-  gym2: 'Siłownia 2',
-  home: 'Dom'
-};
-
-export const CATEGORY_LABELS: Record<Category, string> = {
-  pull: 'Pull',
-  push: 'Push',
-  legs: 'Nogi',
-  core: 'Core',
-  cardio: 'Cardio',
-  mobility: 'Mobility',
-  skill: 'Skill'
-};
+export { LOCATIONS, CATEGORIES, LOCATION_LABELS, CATEGORY_LABELS };
+export type { Location, Category };
 
 export type ExerciseRow = {
   id: number;

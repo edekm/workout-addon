@@ -4,8 +4,8 @@
     CATEGORIES,
     LOCATION_LABELS,
     CATEGORY_LABELS
-  } from '$lib/server/db/library';
-  import type { Location, Category } from '$lib/server/db/library';
+  } from '$lib/workout-constants';
+  import type { Location, Category } from '$lib/workout-constants';
 
   export let data: {
     exercises: Array<{

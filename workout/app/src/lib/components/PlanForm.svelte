@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { PlanInput } from '$lib/server/db/plans';
-  import { LOCATIONS, LOCATION_LABELS } from '$lib/server/db/library';
-  import type { Location } from '$lib/server/db/library';
+  import { LOCATIONS, LOCATION_LABELS } from '$lib/workout-constants';
+  import type { Location } from '$lib/workout-constants';
 
   export let initial: PlanInput;
   export let actionUrl: string;
