@@ -8,13 +8,7 @@
     <title>Workout</title>
     %sveltekit.head%
   </head>
-  <!-- data-sveltekit-reload: pod HA Ingress prefiks URL (/api/hassio_ingress/<token>/)
-       nie jest znany SvelteKit (paths.base musi być statyczny w build time, a token
-       Ingressa zmienia się per sesja). Bez tego klient-side router próbowałby
-       matchować pełną ścieżkę z prefiksem na trasy aplikacji i pokazywał 404
-       dla każdej nawigacji. Wymuszamy pełne przeładowanie - HA Ingress strippuje
-       prefiks i forwarduje czystą ścieżkę do add-ona. -->
-  <body data-sveltekit-reload>
+  <body data-sveltekit-preload-data="hover">
     <div style="display: contents">%sveltekit.body%</div>
   </body>
 </html>
