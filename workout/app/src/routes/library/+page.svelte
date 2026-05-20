@@ -51,13 +51,15 @@
       categoryParam(f.category ?? null),
       archivedParam(f.showArchived ?? false)
     ].filter(Boolean);
-    return parts.length ? '?' + parts.join('&') : '';
+    // Pusty href ('') = "ta sama strona" w HTML, nie czyści query.
+    // '?' strippuje query zachowując ścieżkę.
+    return parts.length ? '?' + parts.join('&') : '?';
   }
 </script>
 
 <main class="mx-auto max-w-2xl p-4">
   <header class="flex items-center gap-3 pt-2 pb-4">
-    <a href="../" class="text-neutral-500 hover:text-neutral-900">←</a>
+    <a href="./" class="text-neutral-500 hover:text-neutral-900">←</a>
     <h1 class="flex-1 text-xl font-bold text-neutral-900">Biblioteka ćwiczeń</h1>
     <a
       href="library/new"
