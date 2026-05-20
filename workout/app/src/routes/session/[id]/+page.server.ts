@@ -66,8 +66,9 @@ export const load: ServerLoad = ({ params }) => {
     | { slot: string; name: string }
     | undefined;
 
-  let exercises: Array<PlanExerciseRow & { progression: ProgressionRow | null; sets: SetRow[] }> =
-    [];
+  let exercises: Array<
+    PlanExerciseRow & { progression: ProgressionRow | null; sets: SetRow[]; locations: string[] }
+  > = [];
 
   if (session.plan_id && session.day_label) {
     const pes = db
@@ -87,6 +88,10 @@ export const load: ServerLoad = ({ params }) => {
       `SELECT level, variant_name, target_reps_min, target_reps_max, target_duration_s
        FROM progressions WHERE exercise_id = ? AND level = ?`
     );
+    const getLocations = db.prepare(
+      `SELECT location FROM exercise_locations WHERE exercise_id = ? ORDER BY location`
+    );
+
     const getSets = db.prepare(
       `SELECT id, exercise_id, set_number, level, reps, duration_s, rpe, notes
        FROM sets WHERE session_id = ? AND exercise_id = ?
@@ -130,8 +135,12 @@ export const load: ServerLoad = ({ params }) => {
         eff.level,
         pe.exercise_id
       ) as Array<{ set_number: number; reps: number | null; duration_s: number | null }>;
+      const locations = (getLocations.all(pe.exercise_id) as Array<{ location: string }>).map(
+        (r) => r.location
+      );
       return {
         ...pe,
+        locations,
         progression,
         promoted: eff.promoted,
         last_sets: lastSets,

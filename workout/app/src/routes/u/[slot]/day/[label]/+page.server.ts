@@ -73,6 +73,10 @@ export const load: ServerLoad = ({ params }) => {
      FROM progressions WHERE exercise_id = ? AND level = ?`
   );
 
+  const getLocations = db.prepare(
+    `SELECT location FROM exercise_locations WHERE exercise_id = ? ORDER BY location`
+  );
+
   const getLastSetsForExerciseLevel = db.prepare(
     `SELECT st.set_number, st.reps, st.duration_s
      FROM sets st
@@ -101,8 +105,12 @@ export const load: ServerLoad = ({ params }) => {
       eff.level,
       ex.exercise_id
     ) as Array<{ set_number: number; reps: number | null; duration_s: number | null }>;
+    const locations = (getLocations.all(ex.exercise_id) as Array<{ location: string }>).map(
+      (r) => r.location
+    );
     return {
       ...ex,
+      locations,
       progression: prog ?? null,
       promoted: eff.promoted,
       last_sets: lastSets

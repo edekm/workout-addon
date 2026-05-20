@@ -2,6 +2,7 @@
   import { enhance, deserialize } from '$app/forms';
   import { onMount, onDestroy } from 'svelte';
   import { equipmentLabel } from '$lib/equipment';
+  import { LOCATION_LABELS, type Location } from '$lib/workout-constants';
 
   type Progression = {
     level: number;
@@ -33,6 +34,7 @@
     category: string;
     equipment_ref: string;
     technique_md: string | null;
+    locations: Location[];
     progression: Progression;
     promoted?: boolean;
     last_sets?: Array<{ set_number: number; reps: number | null; duration_s: number | null }>;
@@ -491,6 +493,15 @@
               {#if ex.progression}
                 <p class="text-sm text-neutral-600">L{ex.progression.level}: {ex.progression.variant_name}</p>
               {/if}
+              {#if ex.locations.length > 0}
+                <div class="mt-1 flex flex-wrap gap-1">
+                  {#each ex.locations as loc}
+                    <span class="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-600">
+                      {LOCATION_LABELS[loc]}
+                    </span>
+                  {/each}
+                </div>
+              {/if}
             </div>
             <span class="rounded-full px-2 py-0.5 text-[10px] font-medium uppercase {categoryColor(ex.category)}">
               {ex.category}
@@ -552,6 +563,15 @@
       <p class="mt-0.5 text-xs text-neutral-500">
         {equipmentLabel(currentEx.equipment_ref)} · odpoczynek {currentEx.rest_seconds}s
       </p>
+      {#if currentEx.locations.length > 0}
+        <div class="mt-1 flex flex-wrap gap-1">
+          {#each currentEx.locations as loc}
+            <span class="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-600">
+              {LOCATION_LABELS[loc]}
+            </span>
+          {/each}
+        </div>
+      {/if}
 
       {#if currentEx.technique_md}
         <button

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { LOCATION_LABELS, type Location } from '$lib/workout-constants';
+
   type Progression = {
     level: number;
     variant_name: string;
@@ -24,6 +26,7 @@
       name_pl: string;
       category: string;
       equipment_ref: string;
+      locations: Location[];
       progression: Progression;
       promoted?: boolean;
       last_sets?: Array<{ set_number: number; reps: number | null; duration_s: number | null }>;
@@ -100,6 +103,15 @@
             <p class="mt-0.5 text-xs text-neutral-400">
               Ostatnio: <span class="font-mono">{lastSummary(it.last_sets)}</span>
             </p>
+            {#if it.locations.length > 0}
+              <div class="mt-1 flex flex-wrap gap-1">
+                {#each it.locations as loc}
+                  <span class="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-600">
+                    {LOCATION_LABELS[loc]}
+                  </span>
+                {/each}
+              </div>
+            {/if}
             {#if it.pe_notes}
               <p class="mt-1 text-xs italic text-neutral-400">{it.pe_notes}</p>
             {/if}
