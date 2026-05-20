@@ -61,6 +61,7 @@ function migrateAddArchivedColumn_v3(db: Database.Database) {
   if (!cols.some((c) => c.name === 'is_archived')) {
     db.prepare('ALTER TABLE exercises ADD COLUMN is_archived INTEGER NOT NULL DEFAULT 0').run();
   }
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_exercises_archived ON exercises(is_archived)').run();
 }
 
 function migrateSharedPlans_v4(db: Database.Database) {

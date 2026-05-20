@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS exercises (
 );
 
 CREATE INDEX IF NOT EXISTS idx_exercises_category ON exercises(category);
-CREATE INDEX IF NOT EXISTS idx_exercises_archived ON exercises(is_archived);
+-- idx_exercises_archived: tworzony w migrateAddArchivedColumn_v3 (po ALTER ADD COLUMN
+-- dla istniejących baz, inaczej index wybucha bo kolumna jeszcze nie istnieje).
 
 CREATE TABLE IF NOT EXISTS exercise_locations (
   exercise_id INTEGER NOT NULL REFERENCES exercises(id) ON DELETE CASCADE,
